@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}dev hub{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='hub.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+<nav class="hub">
+  <div class="inner">
+    <span class="brand">dev hub</span>
+    {% for label, name, prefix in sections %}
+      <a class="tab" href="{{ prefix }}/" {% if name == current_section %}aria-current="page"{% endif %}>{{ label }}</a>
+    {% endfor %}
+  </div>
+</nav>
+<main>
+{% block content %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

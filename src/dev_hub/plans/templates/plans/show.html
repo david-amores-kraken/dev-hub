@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · dev hub{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('plans.static', filename='plans.css') }}">
+{% endblock %}
+{% block content %}
+<p class="meta"><a href="{{ url_for('plans.index') }}">All plans</a>
+  <span><a href="{{ url_for('plans.raw', slug=slug) }}" target="_blank" rel="noopener">open on its own</a></span></p>
+<iframe class="plan" title="{{ title }}" src="{{ url_for('plans.raw', slug=slug) }}"></iframe>
+{% endblock %}

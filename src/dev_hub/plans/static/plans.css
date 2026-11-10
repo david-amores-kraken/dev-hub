@@ -1,0 +1,6 @@
+ul.plans { list-style: none; padding: 0; margin: 12px 0; }
+ul.plans li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+ul.plans a { font-weight: 600; text-decoration: none; }
+ul.plans a:hover { text-decoration: underline; }
+#filter { width: 100%; font: inherit; padding: 8px 10px; margin-top: 12px; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; }
+iframe.plan { width: 100%; height: calc(100vh - 140px); min-height: 480px; border: 1px solid var(--line); border-radius: 8px; margin-top: 8px; background: #fff; }

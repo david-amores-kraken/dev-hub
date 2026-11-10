@@ -1,0 +1,40 @@
+[project]
+name = "dev-hub"
+version = "0.1.0"
+description = "A local web page for my dev work: PR briefs, feature plans, and whatever comes next."
+requires-python = ">=3.12"
+dependencies = ["flask>=3.1", "pr-brief"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.14", "ty>=0.0.1a"]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "dev_hub"
+module-root = "src"
+
+[tool.uv.sources]
+# The PR section lives with its skill, which has to stay under ~/.claude/skills.
+pr-brief = { path = "../../.claude/skills/pr-brief", editable = true }
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+# Deliberately light: the usual bug-finders and tidy-ups, no docstring or complexity rules.
+select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
+ignore = ["E501", "RUF001", "RUF002", "RUF003"]  # the formatter owns line length; text uses − and ·
+
+[tool.ruff.lint.isort]
+known-first-party = ["dev_hub", "pr_brief"]
+
+[tool.ty.environment]
+# review_context.py is shared with the review skills and lives outside both projects.
+extra-paths = ["../../.claude/lib"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

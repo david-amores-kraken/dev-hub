@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Plans · dev hub{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('plans.static', filename='plans.css') }}">
+{% endblock %}
+{% block content %}
+<h1>Plans</h1>
+<p class="meta">Written by the feature skill into <code>~/Plans</code>, newest first.</p>
+<input id="filter" type="search" placeholder="Filter plans" aria-label="Filter plans">
+{% if plans %}
+<ul class="plans" id="plans">
+  {% for plan in plans %}
+  <li data-text="{{ (plan.title ~ ' ' ~ plan.slug) | lower }}">
+    <a href="{{ url_for('plans.show', slug=plan.slug) }}">{{ plan.title }}</a>
+    <div class="meta"><span>{{ plan.updated.replace("T", " ") }}</span><span>{{ plan.slug }}</span></div>
+  </li>
+  {% endfor %}
+</ul>
+<p class="muted" id="none" hidden>No plans match.</p>
+{% else %}
+<p class="muted">No plans yet.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('plans.static', filename='plans.js') }}"></script>
+{% endblock %}
