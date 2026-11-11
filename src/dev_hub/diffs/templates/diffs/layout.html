@@ -1,0 +1,26 @@
+{# One branch: a list of its parts on the left, the chosen part on the right. #}
+{% extends "base.html" %}
+{% block title %}{{ branch }} · Diffs · dev hub{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='diffs.css') }}">
+{% block page_head %}{% endblock %}
+{% endblock %}
+{% block content %}
+<p class="meta"><a href="{{ url_for('diffs.index') }}">All branches</a></p>
+<h1>{{ branch }}</h1>
+<div class="branch">
+  <nav class="parts" aria-label="Parts of {{ branch }}">
+    <a href="{{ url_for('diffs.overview', branch=branch) }}" {% if page == 'overview' %}aria-current="page"{% endif %}>Overview</a>
+    <a href="{{ url_for('diffs.changes', branch=branch) }}" {% if page == 'changes' %}aria-current="page"{% endif %}>All changes</a>
+    <h2>Commits</h2>
+    {% for c in commits %}
+    <a href="{{ url_for('diffs.show_commit', branch=branch, sha=c.sha) }}" {% if commit and commit.sha == c.sha %}aria-current="page"{% endif %}>
+      <span class="num">{{ loop.index }}</span> {{ c.subject }}
+    </a>
+    {% endfor %}
+  </nav>
+  <section class="part">
+    {% block part %}{% endblock %}
+  </section>
+</div>
+{% endblock %}

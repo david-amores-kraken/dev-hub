@@ -1,0 +1,19 @@
+{% extends "diffs/layout.html" %}
+{% set page = 'overview' %}
+{% block part %}
+<h2>Commits</h2>
+{% if commits %}
+<ol class="commits">
+  {% for c in commits %}
+  <li>
+    <a href="{{ url_for('diffs.show_commit', branch=branch, sha=c.sha) }}">{{ c.subject }}</a>
+    <div class="meta"><span>{{ c.sha[:12] }}</span><span>{{ c.author }}</span><span>{{ c.date }}</span></div>
+    {% set rest = c.message.removeprefix(c.subject).strip() %}
+    {% if rest %}<pre class="message">{{ rest }}</pre>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="muted">No commits ahead of the base.</p>
+{% endif %}
+{% endblock %}

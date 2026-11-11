@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import tempfile
 from pathlib import Path
 
@@ -12,6 +11,7 @@ os.environ["PR_BRIEF_HOME"] = tempfile.mkdtemp(prefix="dev-hub-test-")
 
 import pytest
 from flask.testing import FlaskClient
+from helpers import commit, git
 
 from dev_hub.app import create_app
 from dev_hub.config import HOST, PORT
@@ -66,27 +66,3 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("DEV_HUB_REPO", str(folder))
     monkeypatch.setenv("DEV_HUB_BASE", "master")
     return folder
-
-
-def git(folder: Path, *args: str) -> str:
-    env = {
-        **os.environ,
-        "GIT_AUTHOR_NAME": "Test Author",
-        "GIT_AUTHOR_EMAIL": "author@example.com",
-        "GIT_COMMITTER_NAME": "Test Author",
-        "GIT_COMMITTER_EMAIL": "author@example.com",
-    }
-    result = subprocess.run(
-        ["git", "-C", str(folder), "-c", "commit.gpgsign=false", *args],
-        capture_output=True,
-        text=True,
-        check=True,
-        env=env,
-    )
-    return result.stdout.strip()
-
-
-def commit(folder: Path, name: str, text: str, message: str) -> None:
-    (folder / name).write_text(text)
-    git(folder, "add", name)
-    git(folder, "commit", "-q", "-m", message)

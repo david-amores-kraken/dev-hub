@@ -1,0 +1,19 @@
+main { max-width: 1480px; }
+ul.branches { list-style: none; padding: 0; margin: 12px 0; }
+ul.branches li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+ul.branches a { font-weight: 600; text-decoration: none; }
+ul.branches a:hover { text-decoration: underline; }
+.branch { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; margin-top: 16px; align-items: start; }
+@media (max-width: 800px) { .branch { grid-template-columns: 1fr; } }
+nav.parts { display: flex; flex-direction: column; gap: 2px; position: sticky; top: 8px; max-height: calc(100vh - 16px); overflow-y: auto; }
+nav.parts h2 { font-size: 12px; color: var(--muted); border: 0; margin: 14px 8px 4px; padding: 0; text-transform: uppercase; }
+nav.parts a { padding: 5px 8px; border-radius: 6px; text-decoration: none; color: var(--text); font-size: 14px; border: 1px solid transparent; }
+nav.parts a:hover { background: var(--code-bg); }
+nav.parts a[aria-current="page"] { border-color: var(--accent); font-weight: 600; }
+nav.parts .num { color: var(--muted); margin-right: 4px; font-variant-numeric: tabular-nums; }
+section.part h2 { margin-top: 0; }
+ol.commits { list-style: none; padding: 0; margin: 0; }
+ol.commits li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+ol.commits a { font-weight: 600; text-decoration: none; }
+pre.message { margin: 8px 0 0; white-space: pre-wrap; }
+#diff { margin-top: 8px; }
