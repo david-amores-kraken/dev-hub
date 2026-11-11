@@ -6,6 +6,7 @@ section per tool:
 | Section | URL | What it shows | Lives in |
 |---|---|---|---|
 | PRs | `/prs/` | PRs waiting for my review, and the briefs made for them | the `pr-brief` skill (`~/.claude/skills/pr-brief`) |
+| Features | `/features/` | One page per feature, with its plan and report side by side as tabs | `src/dev_hub/features` |
 | Plans | `/plans/` | Plans the `feature` skill saved in `~/Plans` | `src/dev_hub/plans` |
 
 ## How it fits together
@@ -17,14 +18,21 @@ section per tool:
   depends on it (`[tool.uv.sources]` in `pyproject.toml`); it doesn't depend on the hub.
 - Sections extend `templates/base.html`, which has the blocks `title`, `head`, `content`, `scripts`.
   `static/hub.css` has the shared look; a section adds its own CSS next to its templates.
-- Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`). The hub keeps none of its own.
+- Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`, `~/Reports`). The hub keeps none of its own.
 
 ## Safety
 
 It listens on `127.0.0.1` only. Any web page can send requests to localhost, so every request must
 carry the hub's own `Host`, and every POST must be JSON from the hub's own origin. Some sections
-spend money when posted to (PR briefs), so don't weaken this. Plans are model-written HTML, so they
+spend money when posted to (PR briefs), so don't weaken this. Plans and reports are model-written HTML, so they
 are shown in a sandboxed frame (no scripts, no network).
+
+## Features
+
+A feature is a branch. The feature skill names its plan and its report after the branch, and the
+Features section joins them by that name. A feature with only a plan or only a report is still
+listed. To show another part of a feature (a PR, a review), add it to the tab list in
+`features/views.py` and to the store. `DEV_HUB_REPORTS` changes where reports are read from.
 
 ## Running it
 
