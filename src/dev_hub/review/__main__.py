@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from dev_hub.review import description
+from dev_hub.review.e2e import publish
 from dev_hub.review.facts import facts
 from dev_hub.review.helpers import load_helpers
 from dev_hub.review.post import post
@@ -47,6 +48,16 @@ def main() -> None:
     facts_parser = commands.add_parser("facts", help="my feedback and the change's size, as JSON")
     facts_parser.add_argument("branch")
 
+    e2e_parser = commands.add_parser("e2e", help="e2e-verify results")
+    e2e_commands = e2e_parser.add_subparsers(dest="e2e_command", required=True)
+    publish_parser = e2e_commands.add_parser("publish", help="save a results page as the e2e part")
+    publish_parser.add_argument("branch")
+    publish_parser.add_argument(
+        "page", type=Path, help="the HTML page, with {{IMG:name}} for shots"
+    )
+    publish_parser.add_argument("--feedback", type=Path, help="proposals to improve the skill")
+    publish_parser.add_argument("--run-dir", type=Path, help="the run folder (default: by branch)")
+
     pr_parser = commands.add_parser("pr", help="read or write the draft PR title and description")
     pr_commands = pr_parser.add_subparsers(dest="pr_command", required=True)
     show_parser = pr_commands.add_parser("show", help="print the title and description as JSON")
@@ -67,6 +78,8 @@ def main() -> None:
         print(post(args.run_folder, args.persona, dry_run=args.dry_run))
     elif args.command == "todo":
         print(json.dumps(todo(args.branch), indent=2, ensure_ascii=False))
+    elif args.command == "e2e":
+        print(publish(args.branch, args.page, args.feedback, args.run_dir))
     elif args.command == "facts":
         print(json.dumps(facts(args.branch), indent=2, ensure_ascii=False))
     elif args.command == "pr" and args.pr_command == "show":
