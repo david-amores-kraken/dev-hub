@@ -7,7 +7,7 @@
 {% block page_head %}{% endblock %}
 {% endblock %}
 {% block content %}
-<p class="meta"><a href="{{ url_for('diffs.index') }}">All branches</a></p>
+<p class="meta"><a href="{{ url_for('diffs.index') }}">All branches</a>{% if feature_slug %} · <a href="{{ url_for('features.show', slug=feature_slug) }}">Feature: plan and report</a>{% endif %}</p>
 <h1>{{ branch }}</h1>
 <div class="branch">
   <nav class="parts" aria-label="Parts of {{ branch }}">

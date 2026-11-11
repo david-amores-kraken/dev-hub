@@ -16,6 +16,7 @@
       <span>{{ feature.slug }}</span>
       <span class="pill {{ '' if feature.has_plan else 'missing' }}">plan</span>
       <span class="pill {{ '' if feature.has_report else 'missing' }}">report</span>
+      {% if feature.branch %}<a class="pill" href="{{ url_for('diffs.overview', branch=feature.branch) }}">diff{% if feature.open_comments %} · {{ feature.open_comments }} open{% endif %}</a>{% endif %}
     </div>
   </li>
   {% endfor %}

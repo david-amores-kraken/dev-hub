@@ -17,6 +17,13 @@ from dev_hub.app import create_app
 from dev_hub.config import HOST, PORT
 
 
+@pytest.fixture(autouse=True)
+def no_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point the Diffs section at a repo that isn't there, so no test reads a real one. The
+    `repo` fixture replaces this."""
+    monkeypatch.setenv("DEV_HUB_REPO", str(tmp_path / "no-repo"))
+
+
 @pytest.fixture
 def plans(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     folder = tmp_path / "Plans"

@@ -10,8 +10,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
+from dev_hub.review import description
+from dev_hub.review.facts import facts
 from dev_hub.review.helpers import load_helpers
 from dev_hub.review.post import post
 from dev_hub.review.prepare import prepare
@@ -41,6 +44,20 @@ def main() -> None:
     address_parser.add_argument("--commit", help="the commit that deals with it")
     address_parser.add_argument("--as", dest="author", default="Agent", help="who is answering")
 
+    facts_parser = commands.add_parser("facts", help="my feedback and the change's size, as JSON")
+    facts_parser.add_argument("branch")
+
+    pr_parser = commands.add_parser("pr", help="read or write the draft PR title and description")
+    pr_commands = pr_parser.add_subparsers(dest="pr_command", required=True)
+    show_parser = pr_commands.add_parser("show", help="print the title and description as JSON")
+    show_parser.add_argument("branch")
+    set_parser = pr_commands.add_parser("set", help="save a title and/or description")
+    set_parser.add_argument("branch")
+    set_parser.add_argument("--title", help="one line")
+    body = set_parser.add_mutually_exclusive_group()
+    body.add_argument("--body", help="the description, as text")
+    body.add_argument("--body-file", help="read the description from this file ('-' for stdin)")
+
     args = parser.parse_args()
     if args.command == "prepare":
         personas, folder = prepare(args.branch, load_helpers(), final=args.final)
@@ -50,6 +67,15 @@ def main() -> None:
         print(post(args.run_folder, args.persona, dry_run=args.dry_run))
     elif args.command == "todo":
         print(json.dumps(todo(args.branch), indent=2, ensure_ascii=False))
+    elif args.command == "facts":
+        print(json.dumps(facts(args.branch), indent=2, ensure_ascii=False))
+    elif args.command == "pr" and args.pr_command == "show":
+        print(json.dumps(description.show(args.branch), indent=2, ensure_ascii=False))
+    elif args.command == "pr":
+        text = args.body
+        if args.body_file:
+            text = sys.stdin.read() if args.body_file == "-" else Path(args.body_file).read_text()
+        print(description.update(args.branch, args.title, text))
     elif args.command == "address":
         print(address(args.branch, args.comment_id, args.reply, args.commit, args.author))
 

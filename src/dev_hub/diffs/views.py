@@ -29,6 +29,7 @@ from dev_hub.diffs.store import (
     set_triage,
     update_comment,
 )
+from dev_hub.features.store import has_feature, slug_of
 
 blueprint = Blueprint("diffs", __name__, template_folder="templates", static_folder="static")
 
@@ -180,5 +181,6 @@ def _page(
         page=page,
         comments=[c for c in comments if on_page(c, page, shas)],
         counts=open_counts(comments, shas),
+        feature_slug=slug_of(branch) if has_feature(slug_of(branch)) else None,
         **context,
     )

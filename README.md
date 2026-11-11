@@ -70,6 +70,9 @@ steps that talked to GitHub (`skills/local-review/SKILL.md` explains how to set 
 .venv/bin/python -m dev_hub.review post <run folder> <persona>  # what each persona runs at the end
 .venv/bin/python -m dev_hub.review todo <branch>                # the comments to act on, as JSON
 .venv/bin/python -m dev_hub.review address <branch> <id> --reply "..." [--commit <sha>] [--as <name>]
+.venv/bin/python -m dev_hub.review pr show <branch>             # the draft PR title and description
+.venv/bin/python -m dev_hub.review pr set <branch> [--title "..."] [--body "..." | --body-file <file|->]
+.venv/bin/python -m dev_hub.review facts <branch>               # my feedback and the change's size
 ```
 
 - A finding on a diff line is a comment on "All changes". One on the PR description or a commit
@@ -78,6 +81,9 @@ steps that talked to GitHub (`skills/local-review/SKILL.md` explains how to set 
 - A persona's finding is only acted on if I click **Address** on it. **Dismiss** hides it. My own
   comments are always acted on. `todo` lists both, and `address` records the agent's reply and
   resolves the comment.
+- `pr set` is how an agent writes the PR title and description that the Overview box shows. A part
+  that is left out stays as it was.
+- A feature page links to its branch's diff (the Diff link), and the diff links back.
 - The Kraken helpers the preparation step needs are loaded from `~/.claude/lib/review_context.py`.
 
 ## Running it
