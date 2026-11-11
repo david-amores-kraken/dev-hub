@@ -1,5 +1,6 @@
 {# One branch: a list of its parts on the left, the chosen part on the right. #}
 {% extends "base.html" %}
+{% macro badge(count) %}{% if count %}<span class="pill open" title="Open comments">{{ count }}</span>{% endif %}{% endmacro %}
 {% block title %}{{ branch }} · Diffs · dev hub{% endblock %}
 {% block head %}
 <link rel="stylesheet" href="{{ url_for('diffs.static', filename='diffs.css') }}">
@@ -10,17 +11,29 @@
 <h1>{{ branch }}</h1>
 <div class="branch">
   <nav class="parts" aria-label="Parts of {{ branch }}">
-    <a href="{{ url_for('diffs.overview', branch=branch) }}" {% if page == 'overview' %}aria-current="page"{% endif %}>Overview</a>
-    <a href="{{ url_for('diffs.changes', branch=branch) }}" {% if page == 'changes' %}aria-current="page"{% endif %}>All changes</a>
+    <a href="{{ url_for('diffs.overview', branch=branch) }}" {% if page == 'overview' %}aria-current="page"{% endif %}>Overview{{ badge(counts.get('overview')) }}</a>
+    <a href="{{ url_for('diffs.changes', branch=branch) }}" {% if page == 'changes' %}aria-current="page"{% endif %}>All changes{{ badge(counts.get('changes')) }}</a>
     <h2>Commits</h2>
     {% for c in commits %}
     <a href="{{ url_for('diffs.show_commit', branch=branch, sha=c.sha) }}" {% if commit and commit.sha == c.sha %}aria-current="page"{% endif %}>
-      <span class="num">{{ loop.index }}</span> {{ c.subject }}
+      <span class="num">{{ loop.index }}</span> {{ c.subject }}{{ badge(counts.get(c.sha)) }}
     </a>
     {% endfor %}
   </nav>
   <section class="part">
-    {% block part %}{% endblock %}
+    <div id="review" data-base="{{ url_for('diffs.create_comment', branch=branch) }}" data-scope="{{ 'commit' if commit else page }}" data-commit="{{ commit.sha if commit else '' }}">
+      <div id="unplaced" class="unplaced" hidden>
+        <h3>Comments I couldn't place</h3>
+        <p class="meta">The lines they were about aren't on this page any more.</p>
+        <div class="comments"></div>
+      </div>
+      {% block part %}{% endblock %}
+    </div>
+    <script type="application/json" id="comments">{{ comments | tojson }}</script>
   </section>
 </div>
+{% endblock %}
+{% block scripts %}
+{% block page_scripts %}{% endblock %}
+<script src="{{ url_for('diffs.static', filename='comments.js') }}"></script>
 {% endblock %}
