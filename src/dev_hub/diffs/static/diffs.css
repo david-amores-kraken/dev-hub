@@ -21,3 +21,7 @@ pre.message { margin: 8px 0 0; white-space: pre-wrap; }
 .d2h-code-line-ctn.hljs { background: transparent !important; padding: 0; }
 /* Undo the hub's table styling inside the diff; diff2html's own classes still win. */
 :where(.d2h-wrapper) th, :where(.d2h-wrapper) td { padding: 0; border: 0; text-align: inherit; vertical-align: baseline; }
+form.description { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+form.description label { font-size: 12px; font-weight: 600; color: var(--muted); }
+form.description input, form.description textarea { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); width: 100%; }
+form.description textarea { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
