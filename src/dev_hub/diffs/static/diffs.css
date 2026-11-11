@@ -50,3 +50,13 @@ form.editor .controls { margin: 6px 0 0; gap: 6px; }
 .unplaced { border: 1px dashed var(--line); border-radius: 8px; padding: 4px 12px 8px; margin-bottom: 16px; }
 .unplaced h3 { margin-top: 8px; }
 .unplaced .comments { padding: 8px 0 0; }
+
+.comment[data-severity="blocker"] { border-left-color: var(--blocker); }
+.comment[data-severity="should-fix"] { border-left-color: var(--skim); }
+.comment.dismissed { opacity: .45; }
+.comment .reply { margin: 6px 0 0 12px; padding-left: 10px; border-left: 2px solid var(--line); }
+.reviews { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 16px; }
+details.review { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
+details.review summary { font-weight: 600; }
+details.review summary .meta { font-weight: 400; margin-left: 8px; }
+details.review p { margin: 6px 0; }

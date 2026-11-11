@@ -115,3 +115,55 @@ def test_commenting_needs_the_hubs_own_origin(
     )
     assert response.status_code == 403
     assert list_comments("feature/x") == []
+
+
+def test_a_finding_can_be_marked_address_or_dismiss_and_cleared(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    from dev_hub.diffs.store import add_comment
+
+    target = line_target(None)
+    finding = add_comment("feature/x", target, "off by one", finding_id="CR-1", severity="blocker")
+    url = f"/diffs/feature/x/comments/{finding['id']}"
+    assert post(client, base_url, url, {"triage": "address"})[1]["triage"] == "address"
+    assert post(client, base_url, url, {"triage": "dismiss"})[1]["triage"] == "dismiss"
+    assert "triage" not in post(client, base_url, url, {"triage": None})[1]
+    assert post(client, base_url, url, {"triage": "maybe"})[0] == 400
+    assert list_comments("feature/x")[0].get("triage") is None
+
+
+def test_the_overview_lists_reviews_newest_first_and_opens_the_latest_per_persona(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    from dev_hub.diffs.store import add_review
+
+    base = {"name": "Correctness", "emoji": "🧠", "sha": "a" * 40, "findings": [], "resolved": []}
+    add_review(
+        "feature/x",
+        {**base, "persona": "correctness", "verdict": "lgtm", "summary": "First pass <b>fine</b>."},
+        [],
+    )
+    add_review(
+        "feature/x",
+        {
+            **base,
+            "persona": "correctness",
+            "verdict": "comments",
+            "summary": "Second pass.",
+            "findings": ["CR-1"],
+            "unplaced": [
+                {
+                    "finding_id": "CR-1",
+                    "severity": "nit",
+                    "where": "src/x.py",
+                    "body": "Outside the diff.",
+                }
+            ],
+        },
+        [],
+    )
+    page = client.get("/diffs/feature/x", base_url=base_url).get_data(as_text=True)
+    assert page.index("Second pass.") < page.index("First pass")
+    assert page.count('<details class="review" open>') == 1
+    assert "First pass &lt;b&gt;fine&lt;/b&gt;." in page
+    assert "Outside the diff." in page
