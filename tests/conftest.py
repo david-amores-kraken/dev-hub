@@ -41,7 +41,15 @@ def reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def client(plans: Path, reports: Path, reviews: Path) -> FlaskClient:
+def e2e(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    folder = tmp_path / "E2E"
+    folder.mkdir()
+    monkeypatch.setenv("DEV_HUB_E2E", str(folder))
+    return folder
+
+
+@pytest.fixture
+def client(plans: Path, reports: Path, reviews: Path, e2e: Path) -> FlaskClient:
     return create_app().test_client()
 
 

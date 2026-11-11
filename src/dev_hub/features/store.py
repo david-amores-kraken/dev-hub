@@ -1,8 +1,8 @@
-"""Group what the feature skill saved for each feature: its plan and its report.
+"""Group what the skills saved for each feature: its plan, its report and its e2e results.
 
-A feature is a branch. The skill names the plan and the report after it, so the shared name (the
+A feature is a branch. The skills name the plan, the report and the e2e results after it, so the shared name (the
 slug) is what ties them together. The hub stores nothing: it lists both folders and joins them.
-A feature may have only a plan (not done yet) or only a report, and is still shown.
+A feature may have only some of them (a plan before the work is done, say), and is still shown.
 
 A feature also has a diff when a local branch of the Diffs section's repo has its slug. That is
 how the feature page links to the branch's diff, with no extra bookkeeping.
@@ -15,7 +15,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from dev_hub.config import reports_dir
+from dev_hub.config import e2e_dir, reports_dir
 from dev_hub.diffs import git
 from dev_hub.diffs.git import GitError
 from dev_hub.diffs.store import list_comments
@@ -31,6 +31,7 @@ class Feature:
     title: str
     has_plan: bool
     has_report: bool
+    has_e2e: bool
     updated: str  # local time, YYYY-MM-DDTHH:MM
     branch: str | None = None  # the local branch with a diff to read, if there is one
     open_comments: int = 0  # on that branch
@@ -40,16 +41,25 @@ def list_features() -> list[Feature]:
     """Every feature that has a plan or a report, newest first."""
     plans = {plan.slug: plan for plan in list_plans()}
     reports = {path.stem: path for path in reports_dir().glob("*.html") if path.name != INDEX_NAME}
+    e2e = {path.stem for path in e2e_dir().glob("*.html") if path.name != INDEX_NAME}
     branches = _branches()
     features = []
-    for slug in plans.keys() | reports.keys():
+    for slug in plans.keys() | reports.keys() | e2e:
         plan, report = plans.get(slug), reports.get(slug)
         title = plan.title if plan else _report_title(report) or slug
         updated = max(plan.updated if plan else "", _modified(report) if report else "")
+        updated = max(updated, _modified(e2e_dir() / f"{slug}.html") if slug in e2e else "")
         branch = branches.get(slug)
         features.append(
             Feature(
-                slug, title, plan is not None, report is not None, updated, branch, _open(branch)
+                slug,
+                title,
+                plan is not None,
+                report is not None,
+                slug in e2e,
+                updated,
+                branch,
+                _open(branch),
             )
         )
     return sorted(features, key=lambda feature: feature.updated, reverse=True)
@@ -61,7 +71,7 @@ def slug_of(branch: str) -> str:
 
 
 def has_feature(slug: str) -> bool:
-    return plan_file(slug) is not None or report_file(slug) is not None
+    return any(find(slug) is not None for find in (plan_file, report_file, e2e_file))
 
 
 def get_feature(slug: str) -> Feature | None:
@@ -73,6 +83,14 @@ def report_file(slug: str) -> Path | None:
     if not SLUG_RE.match(slug) or slug == INDEX_NAME.removesuffix(".html"):
         return None
     path = reports_dir() / f"{slug}.html"
+    return path if path.is_file() else None
+
+
+def e2e_file(slug: str) -> Path | None:
+    """The e2e results page, or None if the slug isn't one we know."""
+    if not SLUG_RE.match(slug) or slug == INDEX_NAME.removesuffix(".html"):
+        return None
+    path = e2e_dir() / f"{slug}.html"
     return path if path.is_file() else None
 
 

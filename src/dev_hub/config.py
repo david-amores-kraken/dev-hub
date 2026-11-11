@@ -19,6 +19,11 @@ def reports_dir() -> Path:
     return Path(os.environ.get("DEV_HUB_REPORTS") or Path.home() / "Reports")
 
 
+def e2e_dir() -> Path:
+    """Where the e2e-verify skill saves its results for each feature."""
+    return Path(os.environ.get("DEV_HUB_E2E") or Path.home() / "E2E")
+
+
 def repo_dir() -> Path:
     """The git repo whose branches the Diffs section shows."""
     return Path(os.environ.get("DEV_HUB_REPO") or Path.home() / "Code" / "kraken-core")
