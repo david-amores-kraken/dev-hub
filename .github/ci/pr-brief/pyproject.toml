@@ -1,0 +1,17 @@
+[project]
+name = "pr-brief"
+version = "0.1.0"
+description = "A stand-in for the real pr-brief package, which only exists on my machine."
+requires-python = ">=3.12"
+dependencies = ["flask>=3.1"]
+
+[dependency-groups]
+dev = ["pytest>=8", "ruff>=0.14", "ty>=0.0.1a"]
+
+[build-system]
+requires = ["uv_build>=0.8,<0.13"]
+build-backend = "uv_build"
+
+[tool.uv.build-backend]
+module-name = "pr_brief"
+module-root = "src"
