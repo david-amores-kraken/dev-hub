@@ -9,11 +9,13 @@ address <branch> <id> ...      answer a comment and mark it done
 from __future__ import annotations
 
 import argparse
+import json
 from pathlib import Path
 
 from dev_hub.review.helpers import load_helpers
 from dev_hub.review.post import post
 from dev_hub.review.prepare import prepare
+from dev_hub.review.todo import address, todo
 
 
 def main() -> None:
@@ -29,6 +31,16 @@ def main() -> None:
     post_parser.add_argument("persona")
     post_parser.add_argument("--dry-run", action="store_true", help="print what would be saved")
 
+    todo_parser = commands.add_parser("todo", help="list the comments to act on, as JSON")
+    todo_parser.add_argument("branch")
+
+    address_parser = commands.add_parser("address", help="answer a comment and mark it resolved")
+    address_parser.add_argument("branch")
+    address_parser.add_argument("comment_id")
+    address_parser.add_argument("--reply", required=True, help="what was done, or why not")
+    address_parser.add_argument("--commit", help="the commit that deals with it")
+    address_parser.add_argument("--as", dest="author", default="Agent", help="who is answering")
+
     args = parser.parse_args()
     if args.command == "prepare":
         personas, folder = prepare(args.branch, load_helpers(), final=args.final)
@@ -36,6 +48,10 @@ def main() -> None:
         print(folder)
     elif args.command == "post":
         print(post(args.run_folder, args.persona, dry_run=args.dry_run))
+    elif args.command == "todo":
+        print(json.dumps(todo(args.branch), indent=2, ensure_ascii=False))
+    elif args.command == "address":
+        print(address(args.branch, args.comment_id, args.reply, args.commit, args.author))
 
 
 if __name__ == "__main__":
