@@ -9,13 +9,13 @@ from werkzeug.wrappers import Response
 
 from dev_hub.diffs import git
 from dev_hub.diffs.comments import STATUSES, is_valid_text, on_page, open_counts, parse_target
+from dev_hub.diffs.follow import follow
 from dev_hub.diffs.git import Commit, GitError
 from dev_hub.diffs.store import (
     MAX_BODY,
     MAX_TITLE,
     add_comment,
     delete_comment,
-    list_comments,
     load_description,
     save_description,
     update_comment,
@@ -37,11 +37,15 @@ def index() -> str:
 
 @blueprint.get("/<path:branch>")
 def overview(branch: str) -> str:
+    commits = _commits(branch)
+    description = load_description(branch)
     return _page(
         "diffs/overview.html",
         branch,
+        commits,
+        follow(branch, commits, body=description.body),
         page="overview",
-        description=load_description(branch),
+        description=description,
         max_title=MAX_TITLE,
         max_body=MAX_BODY,
     )
@@ -49,14 +53,23 @@ def overview(branch: str) -> str:
 
 @blueprint.get("/<path:branch>/changes")
 def changes(branch: str) -> str:
-    _require_branch(branch)
-    return _page("diffs/patch.html", branch, page="changes", patch=git.branch_patch(branch))
+    commits = _commits(branch)
+    patch = git.branch_patch(branch)
+    comments = follow(branch, commits, patch=patch)
+    return _page("diffs/patch.html", branch, commits, comments, page="changes", patch=patch)
 
 
 @blueprint.get("/<path:branch>/commits/<sha>")
 def show_commit(branch: str, sha: str) -> str:
-    commit = _commit(branch, sha)
-    return _page("diffs/patch.html", branch, page=sha, commit=commit, patch=git.commit_patch(sha))
+    commits = _commits(branch)
+    comments = follow(branch, commits)  # first, so a rebased commit's comments are on its new sha
+    commit = next((c for c in commits if c.sha == sha), None)
+    if commit is None:
+        abort(404)
+    patch = git.commit_patch(sha)
+    return _page(
+        "diffs/patch.html", branch, commits, comments, page=sha, commit=commit, patch=patch
+    )
 
 
 @blueprint.post("/<path:branch>/description")
@@ -125,24 +138,23 @@ def _commits(branch: str) -> list[Commit]:
     return git.list_commits(branch)
 
 
-def _commit(branch: str, sha: str) -> Commit:
-    commit = next((c for c in _commits(branch) if c.sha == sha), None)
-    if commit is None:
-        abort(404)
-    return commit
-
-
-def _page(template: str, branch: str, page: str, **context: Any) -> str:
+def _page(
+    template: str,
+    branch: str,
+    commits: list[Commit],
+    comments: list[dict[str, Any]],
+    page: str,
+    **context: Any,
+) -> str:
     """Render one part of a branch. `page` is "overview", "changes" or a commit's sha, and picks
-    which comments go on the page."""
-    commits = _commits(branch)
-    comments = list_comments(branch)
+    which of the comments go on the page."""
+    shas = {commit.sha for commit in commits}
     return render_template(
         template,
         branch=branch,
         commits=commits,
         page=page,
-        comments=[c for c in comments if on_page(c, page)],
-        counts=open_counts(comments),
+        comments=[c for c in comments if on_page(c, page, shas)],
+        counts=open_counts(comments, shas),
         **context,
     )

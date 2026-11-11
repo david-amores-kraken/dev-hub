@@ -229,11 +229,17 @@ function start(review) {
     unplaced.hidden = !list.children.length;
   }
 
-  // The row a comment sits under: the last line of its range.
+  // The row a comment sits under: the last line of its range. The lines on the page must still
+  // be the quoted ones; if they aren't, the comment is listed as one that couldn't be placed
+  // instead of being shown against the wrong code.
   function findRow(target) {
     const surface = surfaces.find(s => s.kind === target.kind && (s.kind !== "line" || s.file === target.file));
+    if (!surface) return undefined;
     const key = sideKey(target.side ?? "new");
-    return surface?.rows.find(row => row[key] === target.end);
+    const quote = target.quote.split("\n").map(line => line.trimEnd());
+    const lines = surface.rows.filter(row => row[key] !== null && row[key] >= target.start && row[key] <= target.end);
+    const same = lines.length === quote.length && lines.every((row, i) => row.text.trimEnd() === quote[i]);
+    return same ? lines.at(-1) : undefined;
   }
 
   function holder(row) {
@@ -266,7 +272,8 @@ function start(review) {
     const head = document.createElement("div");
     head.className = "meta";
     const when = comment.created.slice(0, 16).replace("T", " ");
-    head.textContent = [showWhere ? describe(comment.target) : null, when, comment.status === "resolved" ? "resolved" : null]
+    const commitName = showWhere && comment.target.subject ? `“${comment.target.subject}”` : null;
+    head.textContent = [commitName, showWhere ? describe(comment.target) : null, when, comment.status === "resolved" ? "resolved" : null]
       .filter(Boolean).join(" · ");
     el.append(head);
     if (showWhere) {
