@@ -98,10 +98,18 @@ def branch_patch(branch: str) -> str:
     return _git("diff", "-M", "--no-color", "--no-ext-diff", f"{base_ref()}...refs/heads/{branch}")
 
 
-def _git(*args: str) -> str:
+def patch_id(sha: str) -> str | None:
+    """git's fingerprint of what a commit changes. It stays the same when the commit is rebased,
+    so it is how a commit is found again after its sha changes."""
+    output = _git("patch-id", "--stable", stdin=commit_patch(sha))
+    return output.split()[0] if output.strip() else None
+
+
+def _git(*args: str, stdin: str | None = None) -> str:
     try:
         result = subprocess.run(
             ["git", "-C", str(repo_dir()), *args],
+            input=stdin,
             capture_output=True,
             text=True,
             encoding="utf-8",

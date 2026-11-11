@@ -11,6 +11,7 @@ from dev_hub.diffs.git import (
     has_branch,
     list_branches,
     list_commits,
+    patch_id,
 )
 
 
@@ -57,3 +58,18 @@ def test_git_errors_become_git_errors(tmp_path: Path, monkeypatch: pytest.Monkey
     monkeypatch.setenv("DEV_HUB_REPO", str(tmp_path / "missing"))
     with pytest.raises(GitError):
         list_branches()
+
+
+def test_patch_id_ignores_the_parent_and_the_message(repo: Path) -> None:
+    from helpers import git
+
+    one, _ = list_commits("feature/x")
+    original = patch_id(one.sha)
+    assert original
+    # The same change on top of the moved-on master, with another message: new sha, same patch id.
+    git(repo, "switch", "-q", "-c", "rebased", "master")
+    git(repo, "cherry-pick", one.sha)
+    git(repo, "commit", "-q", "--amend", "-m", "A new message")
+    [again] = [c for c in list_commits("rebased")]
+    assert again.sha != one.sha
+    assert patch_id(again.sha) == original
