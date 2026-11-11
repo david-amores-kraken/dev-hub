@@ -17,3 +17,18 @@ def plans_dir() -> Path:
 def reports_dir() -> Path:
     """Where the feature skill saves reports (and their index.html)."""
     return Path(os.environ.get("DEV_HUB_REPORTS") or Path.home() / "Reports")
+
+
+def repo_dir() -> Path:
+    """The git repo whose branches the Diffs section shows."""
+    return Path(os.environ.get("DEV_HUB_REPO") or Path.home() / "Code" / "kraken-core")
+
+
+def base_ref() -> str:
+    """What branches are compared against: a branch's commits are the ones not in this ref."""
+    return os.environ.get("DEV_HUB_BASE") or "origin/master"
+
+
+def reviews_dir() -> Path:
+    """Where the Diffs section keeps what I write about a branch (the PR title and body)."""
+    return Path(os.environ.get("DEV_HUB_REVIEWS") or Path.home() / "Reviews")

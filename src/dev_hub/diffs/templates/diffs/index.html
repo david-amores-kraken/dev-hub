@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Diffs · dev hub{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='diffs.css') }}">
+{% endblock %}
+{% block content %}
+<h1>Diffs</h1>
+<p class="meta">Local branches with commits the base doesn't have, newest first.</p>
+{% if error %}
+<p class="err">Can't read the repo: {{ error }}</p>
+{% elif branches %}
+<ul class="branches">
+  {% for branch in branches %}
+  <li>
+    <a href="{{ url_for('diffs.overview', branch=branch.name) }}">{{ branch.name }}</a>
+    <div class="meta">
+      <span>{{ branch.commits }} commit{{ '' if branch.commits == 1 else 's' }}</span>
+      <span>{{ branch.updated }}</span>
+      <span>{{ branch.subject }}</span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No branches ahead of the base.</p>
+{% endif %}
+{% endblock %}

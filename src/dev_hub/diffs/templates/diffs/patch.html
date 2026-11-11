@@ -1,0 +1,33 @@
+{% extends "diffs/layout.html" %}
+{% set page = 'commit' if commit else 'changes' %}
+{% block page_head %}
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='vendor/diff2html.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='vendor/hljs-light.min.css') }}" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='vendor/hljs-dark.min.css') }}" media="(prefers-color-scheme: dark)">
+{% endblock %}
+{% block part %}
+{% if commit %}
+<h2>{{ commit.subject }}</h2>
+<p class="meta"><span>{{ commit.sha[:12] }}</span><span>{{ commit.author }}</span><span>{{ commit.date }}</span></p>
+{% set rest = commit.message.removeprefix(commit.subject).strip() %}
+{% if rest %}<pre class="message">{{ rest }}</pre>{% endif %}
+{% else %}
+<h2>All changes</h2>
+<p class="meta">Everything the branch changed since it left the base.</p>
+{% endif %}
+{% if patch.strip() %}
+<div class="controls">
+  <button class="plain" type="button" id="layout">Side by side</button>
+</div>
+<div id="diff"></div>
+<script type="application/json" id="patch">{{ patch | tojson }}</script>
+{% else %}
+<p class="muted">No file changes.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if patch.strip() %}
+<script src="{{ url_for('diffs.static', filename='vendor/diff2html-ui.min.js') }}"></script>
+<script src="{{ url_for('diffs.static', filename='diffs.js') }}"></script>
+{% endif %}
+{% endblock %}

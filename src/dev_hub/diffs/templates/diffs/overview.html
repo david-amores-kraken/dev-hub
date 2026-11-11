@@ -1,0 +1,34 @@
+{% extends "diffs/layout.html" %}
+{% set page = 'overview' %}
+{% block part %}
+<h2>Pull request</h2>
+<p class="meta">What the PR will say when you open it. Saved on this machine only.</p>
+<form class="description" id="description" action="{{ url_for('diffs.save', branch=branch) }}">
+  <label for="title">Title</label>
+  <input type="text" id="title" name="title" maxlength="{{ max_title }}" value="{{ description.title }}" placeholder="One line that says what the PR does">
+  <label for="body">Description</label>
+  <textarea id="body" name="body" rows="14" maxlength="{{ max_body }}" placeholder="What changed, why, and what to look at first">{{ description.body }}</textarea>
+  <div class="controls">
+    <button class="act" type="submit">Save</button>
+    <span class="meta" id="status" role="status"></span>
+  </div>
+</form>
+<h2>Commits</h2>
+{% if commits %}
+<ol class="commits">
+  {% for c in commits %}
+  <li>
+    <a href="{{ url_for('diffs.show_commit', branch=branch, sha=c.sha) }}">{{ c.subject }}</a>
+    <div class="meta"><span>{{ c.sha[:12] }}</span><span>{{ c.author }}</span><span>{{ c.date }}</span></div>
+    {% set rest = c.message.removeprefix(c.subject).strip() %}
+    {% if rest %}<pre class="message">{{ rest }}</pre>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="muted">No commits ahead of the base.</p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('diffs.static', filename='description.js') }}"></script>
+{% endblock %}
