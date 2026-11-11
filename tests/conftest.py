@@ -85,16 +85,15 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @pytest.fixture
 def skills(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """A stand-in for ~/.claude: the self-review brief and one writing preference file."""
+    """A stand-in for ~/.claude (one writing preference file) and for the review brief."""
     home = tmp_path / "claude"
-    brief = home / "skills" / "self-review" / "reference" / "brief.md"
-    brief.parent.mkdir(parents=True)
+    home.mkdir()
+    brief = tmp_path / "brief.md"
     brief.write_text(
-        "# Self-review brief\n\nRules.\n\n```bash\n"
-        "python3 /Users/x/.claude/skills/self-review/scripts/post.py <run folder> <your persona key>\n"
-        "```\n"
+        "# Local review brief\n\nThis is a review of a local branch.\n\n```bash\n"
+        "{POST_COMMAND} <run folder> <your persona key>\n```\n"
     )
     (home / "comment-preferences.md").write_text("no comments")
     monkeypatch.setattr("dev_hub.review.prepare.CLAUDE", home)
     monkeypatch.setattr("dev_hub.review.prepare.BRIEF", brief)
-    return home
+    return brief

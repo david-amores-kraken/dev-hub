@@ -1,4 +1,4 @@
-"""The reviewer personas. Keep this in step with PERSONAS in the self-review skill's common.py."""
+"""The reviewer personas. The agents are in ~/.claude/agents (review-*.md)."""
 
 from __future__ import annotations
 
