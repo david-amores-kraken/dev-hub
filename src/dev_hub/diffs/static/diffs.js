@@ -14,9 +14,9 @@ function draw(layout) {
     matching: "lines",
     colorScheme: "auto",
     highlight: true,
+    fileContentToggle: false,
   });
-  ui.draw();
-  ui.highlightCode();
+  ui.draw(); // also highlights, because of `highlight: true`
   button.textContent = layout === "line-by-line" ? "Side by side" : "Line by line";
   button.dataset.layout = layout;
 }

@@ -17,3 +17,7 @@ ol.commits li { padding: 10px 0; border-bottom: 1px solid var(--line); }
 ol.commits a { font-weight: 600; text-decoration: none; }
 pre.message { margin: 8px 0 0; white-space: pre-wrap; }
 #diff { margin-top: 8px; }
+/* The highlight.js themes paint a background; keep diff2html's added and removed shading. */
+.d2h-code-line-ctn.hljs { background: transparent !important; padding: 0; }
+/* Undo the hub's table styling inside the diff; diff2html's own classes still win. */
+:where(.d2h-wrapper) th, :where(.d2h-wrapper) td { padding: 0; border: 0; text-align: inherit; vertical-align: baseline; }

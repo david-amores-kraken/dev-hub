@@ -2,6 +2,8 @@
 {% set page = 'commit' if commit else 'changes' %}
 {% block page_head %}
 <link rel="stylesheet" href="{{ url_for('diffs.static', filename='vendor/diff2html.min.css') }}">
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='vendor/hljs-light.min.css') }}" media="(prefers-color-scheme: light)">
+<link rel="stylesheet" href="{{ url_for('diffs.static', filename='vendor/hljs-dark.min.css') }}" media="(prefers-color-scheme: dark)">
 {% endblock %}
 {% block part %}
 {% if commit %}
