@@ -25,3 +25,28 @@ form.description { display: flex; flex-direction: column; gap: 6px; margin-botto
 form.description label { font-size: 12px; font-weight: 600; color: var(--muted); }
 form.description input, form.description textarea { font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); width: 100%; }
 form.description textarea { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; resize: vertical; }
+
+/* Comments */
+.pill.open { margin-left: 6px; color: var(--accent); border-color: var(--accent); }
+.text-lines { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); margin: 8px 0 16px; overflow-x: auto; }
+.text-lines.empty { padding: 8px 12px; color: var(--muted); font-size: 13px; }
+.text-lines table { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.text-lines td { border: 0; padding: 0 8px; }
+td.gutter, td.d2h-code-linenumber { cursor: pointer; user-select: none; }
+td.gutter { width: 3em; text-align: right; color: var(--muted); border-right: 1px solid var(--line); }
+td.gutter:hover { color: var(--accent); }
+.text-lines td.text { white-space: pre-wrap; }
+tr.selected > td { box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--accent) 22%, transparent); }
+tr.comments-row > td, tr.composer-row > td { padding: 0; border: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 14px; white-space: normal; text-align: left; background: var(--bg); }
+.comments { display: flex; flex-direction: column; gap: 8px; padding: 8px 12px; max-width: 900px; }
+.comment, form.editor { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 8px 10px; }
+.comment.resolved { opacity: .6; border-left-color: var(--skip); }
+.comment .text { white-space: pre-wrap; margin: 4px 0; }
+.comment .controls { margin: 4px 0 0; gap: 4px; }
+pre.quote { margin: 6px 0; font-size: 12px; white-space: pre-wrap; max-height: 8em; overflow: auto; }
+tr.composer-row form.editor { margin: 8px 12px; max-width: 900px; }
+form.editor textarea { width: 100%; font: inherit; padding: 6px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--text); resize: vertical; }
+form.editor .controls { margin: 6px 0 0; gap: 6px; }
+.unplaced { border: 1px dashed var(--line); border-radius: 8px; padding: 4px 12px 8px; margin-bottom: 16px; }
+.unplaced h3 { margin-top: 8px; }
+.unplaced .comments { padding: 8px 0 0; }

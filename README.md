@@ -19,7 +19,7 @@ section per tool:
   depends on it (`[tool.uv.sources]` in `pyproject.toml`); it doesn't depend on the hub.
 - Sections extend `templates/base.html`, which has the blocks `title`, `head`, `content`, `scripts`.
   `static/hub.css` has the shared look; a section adds its own CSS next to its templates.
-- Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`, `~/Reports`). The only data the hub owns is what I write in the Diffs section, in `~/Reviews`.
+- Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`, `~/Reports`). The only data the hub owns is what I write in the Diffs section (PR title and body, comments), in `~/Reviews`.
 
 ## Safety
 
@@ -46,6 +46,11 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
 - Nothing is checked out. Branches and commits are read from the refs.
 - The overview has a title and description box for the PR. It saves to `~/Reviews/<branch>.json`
   (`DEV_HUB_REVIEWS` changes the folder; `/` in the branch name is written as `%2F`).
+- Click a line number to comment on a line, and shift-click a second one for a range. This works
+  in diffs, commit messages and the saved PR description. A comment is saved at once (there is no
+  review to submit), and can be edited, resolved or deleted. Comments live in the same review file
+  as the PR body, with the commit's subject and patch id and a quote of the lines, so they can be
+  matched up again after a rebase.
 - Diffs are drawn in the browser by [diff2html](https://diff2html.xyz) 3.4.52, with highlight.js
   colours. Both are vendored under `diffs/static/vendor`; there is no build step. To update them,
   download the same files from the new version.

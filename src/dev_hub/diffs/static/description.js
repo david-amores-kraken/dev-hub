@@ -16,6 +16,8 @@ form.addEventListener("submit", async event => {
       body: JSON.stringify({ title: form.title.value, body: form.body.value }),
     });
     status.textContent = response.ok ? "Saved" : `Not saved (${response.status})`;
+    // Let comments.js show the lines that are now saved.
+    if (response.ok) document.dispatchEvent(new CustomEvent("description-saved", { detail: form.body.value }));
   } catch {
     status.textContent = "Not saved (can't reach the hub)";
   } finally {

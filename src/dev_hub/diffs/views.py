@@ -2,14 +2,28 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from flask import Blueprint, abort, jsonify, render_template, request
 from werkzeug.wrappers import Response
 
 from dev_hub.diffs import git
+from dev_hub.diffs.comments import STATUSES, is_valid_text, on_page, open_counts, parse_target
 from dev_hub.diffs.git import Commit, GitError
-from dev_hub.diffs.store import MAX_BODY, MAX_TITLE, load_description, save_description
+from dev_hub.diffs.store import (
+    MAX_BODY,
+    MAX_TITLE,
+    add_comment,
+    delete_comment,
+    list_comments,
+    load_description,
+    save_description,
+    update_comment,
+)
 
 blueprint = Blueprint("diffs", __name__, template_folder="templates", static_folder="static")
+
+Reply = Response | tuple[Response, int]
 
 
 @blueprint.get("/")
@@ -23,19 +37,30 @@ def index() -> str:
 
 @blueprint.get("/<path:branch>")
 def overview(branch: str) -> str:
-    commits = _commits(branch)
-    return render_template(
+    return _page(
         "diffs/overview.html",
-        branch=branch,
-        commits=commits,
+        branch,
+        page="overview",
         description=load_description(branch),
         max_title=MAX_TITLE,
         max_body=MAX_BODY,
     )
 
 
+@blueprint.get("/<path:branch>/changes")
+def changes(branch: str) -> str:
+    _require_branch(branch)
+    return _page("diffs/patch.html", branch, page="changes", patch=git.branch_patch(branch))
+
+
+@blueprint.get("/<path:branch>/commits/<sha>")
+def show_commit(branch: str, sha: str) -> str:
+    commit = _commit(branch, sha)
+    return _page("diffs/patch.html", branch, page=sha, commit=commit, patch=git.commit_patch(sha))
+
+
 @blueprint.post("/<path:branch>/description")
-def save(branch: str) -> Response | tuple[Response, int]:
+def save(branch: str) -> Reply:
     _require_branch(branch)
     data = request.get_json(silent=True)
     title = data.get("title") if isinstance(data, dict) else None
@@ -48,19 +73,45 @@ def save(branch: str) -> Response | tuple[Response, int]:
     return jsonify(ok=True)
 
 
-@blueprint.get("/<path:branch>/changes")
-def changes(branch: str) -> str:
-    commits = _commits(branch)
-    return _patch_page(branch, commits, git.branch_patch(branch), commit=None)
+@blueprint.post("/<path:branch>/comments")
+def create_comment(branch: str) -> Reply:
+    commits = {c.sha: c for c in _commits(branch)}
+    data = request.get_json(silent=True)
+    data = data if isinstance(data, dict) else {}
+    target = parse_target(data.get("target"), commits)
+    if target is None:
+        return jsonify(error="that isn't a place a comment can go"), 400
+    if not is_valid_text(data.get("text")):
+        return jsonify(error="the comment is empty or too long"), 400
+    if target["commit"]:
+        # Remember which commit this was, so it can be found again after a rebase.
+        target["subject"] = commits[target["commit"]].subject
+        target["patch_id"] = git.patch_id(target["commit"])
+    return jsonify(add_comment(branch, target, data["text"]))
 
 
-@blueprint.get("/<path:branch>/commits/<sha>")
-def show_commit(branch: str, sha: str) -> str:
-    commits = _commits(branch)
-    commit = next((c for c in commits if c.sha == sha), None)
-    if commit is None:
+@blueprint.post("/<path:branch>/comments/<comment_id>")
+def change_comment(branch: str, comment_id: str) -> Reply:
+    _require_branch(branch)
+    data = request.get_json(silent=True)
+    data = data if isinstance(data, dict) else {}
+    text, status = data.get("text"), data.get("status")
+    if text is not None and not is_valid_text(text):
+        return jsonify(error="the comment is empty or too long"), 400
+    if status is not None and status not in STATUSES:
+        return jsonify(error="status must be open or resolved"), 400
+    comment = update_comment(branch, comment_id, text=text, status=status)
+    if comment is None:
         abort(404)
-    return _patch_page(branch, commits, git.commit_patch(sha), commit=commit)
+    return jsonify(comment)
+
+
+@blueprint.post("/<path:branch>/comments/<comment_id>/delete")
+def remove_comment(branch: str, comment_id: str) -> Reply:
+    _require_branch(branch)
+    if not delete_comment(branch, comment_id):
+        abort(404)
+    return jsonify(ok=True)
 
 
 def _require_branch(branch: str) -> None:
@@ -74,7 +125,24 @@ def _commits(branch: str) -> list[Commit]:
     return git.list_commits(branch)
 
 
-def _patch_page(branch: str, commits: list[Commit], patch: str, commit: Commit | None) -> str:
+def _commit(branch: str, sha: str) -> Commit:
+    commit = next((c for c in _commits(branch) if c.sha == sha), None)
+    if commit is None:
+        abort(404)
+    return commit
+
+
+def _page(template: str, branch: str, page: str, **context: Any) -> str:
+    """Render one part of a branch. `page` is "overview", "changes" or a commit's sha, and picks
+    which comments go on the page."""
+    commits = _commits(branch)
+    comments = list_comments(branch)
     return render_template(
-        "diffs/patch.html", branch=branch, commits=commits, patch=patch, commit=commit
+        template,
+        branch=branch,
+        commits=commits,
+        page=page,
+        comments=[c for c in comments if on_page(c, page)],
+        counts=open_counts(comments),
+        **context,
     )

@@ -1,5 +1,4 @@
 {% extends "diffs/layout.html" %}
-{% set page = 'overview' %}
 {% block part %}
 <h2>Pull request</h2>
 <p class="meta">What the PR will say when you open it. Saved on this machine only.</p>
@@ -13,6 +12,9 @@
     <span class="meta" id="status" role="status"></span>
   </div>
 </form>
+<h3>Comment on the description</h3>
+<p class="meta" id="body-hint">Click a line number to comment on a line. Shift-click a second one to comment on a range. Shows the saved description.</p>
+<div class="text-lines" id="body-lines" data-kind="pr_body" data-text="{{ description.body }}"></div>
 <h2>Commits</h2>
 {% if commits %}
 <ol class="commits">
@@ -29,6 +31,6 @@
 <p class="muted">No commits ahead of the base.</p>
 {% endif %}
 {% endblock %}
-{% block scripts %}
+{% block page_scripts %}
 <script src="{{ url_for('diffs.static', filename='description.js') }}"></script>
 {% endblock %}

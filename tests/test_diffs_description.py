@@ -98,3 +98,12 @@ def test_saving_needs_the_hubs_own_origin(repo: Path, client: FlaskClient, base_
     )
     assert response.status_code == 403
     assert not review_file("feature/x").exists()
+
+
+def test_saving_the_description_keeps_the_comments(reviews: Path) -> None:
+    from dev_hub.diffs.store import add_comment, list_comments
+
+    target = {"kind": "pr_body", "commit": None, "start": 1, "end": 1, "quote": "q"}
+    add_comment("feature/x", target, "first")
+    save_description("feature/x", "t", "b")
+    assert [c["text"] for c in list_comments("feature/x")] == ["first"]
