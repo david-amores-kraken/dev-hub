@@ -38,6 +38,10 @@ launchctl kickstart -k gui/$(id -u)/com.davidamores.dev-hub   # restart the laun
 uv run ruff check . && uv run ruff format --check . && uv run ty check && uv run pytest
 ```
 
+GitHub Actions runs the same checks on every PR (`.github/workflows/ci.yml`). The `pr-brief` package
+only exists on my machine, so CI installs a small stand-in from `.github/ci/pr-brief`. If the PR
+section's tests start to need more of the real one, grow the stand-in.
+
 `DEV_HUB_PORT` changes the port. If you do, set `hub_url` in the pr-brief `config.json` to match.
 
 ## Adding a section
