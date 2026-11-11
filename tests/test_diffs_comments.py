@@ -108,3 +108,19 @@ def test_a_comment_on_a_commit_that_is_gone_goes_on_the_overview(reviews: Path) 
     ]
     assert not [c for c in comments if on_page(c, SHA, shas)]
     assert open_counts(comments, shas) == {"overview": 2}
+
+
+def test_two_programs_adding_comments_at_once_lose_none(reviews: Path) -> None:
+    # The hub and the review commands are separate processes sharing one file.
+    import subprocess
+    import sys
+
+    code = (
+        "from dev_hub.diffs.store import add_comment\n"
+        "t = {'kind': 'pr_body', 'commit': None, 'start': 1, 'end': 1, 'quote': 'q'}\n"
+        "for n in range(15): add_comment('b', t, 'x')\n"
+    )
+    env = {"DEV_HUB_REVIEWS": str(reviews), "PATH": "/usr/bin:/bin"}
+    procs = [subprocess.Popen([sys.executable, "-c", code], env=env) for _ in range(4)]
+    assert [p.wait() for p in procs] == [0, 0, 0, 0]
+    assert len(list_comments("b")) == 60

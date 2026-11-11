@@ -8,6 +8,7 @@ know are kept when it saves, so later features can add to the same file.
 
 from __future__ import annotations
 
+import fcntl
 import json
 import os
 import tempfile
@@ -25,7 +26,8 @@ from dev_hub.config import reviews_dir
 MAX_TITLE = 500
 MAX_BODY = 100_000
 
-# Requests are handled on several threads, and each change is read-modify-write.
+# Requests are handled on several threads, and each change is read-modify-write. Other programs
+# (the review commands that agents run) change the same files, so the file is locked as well.
 _lock = threading.Lock()
 
 
@@ -110,11 +112,12 @@ def _find(data: dict[str, Any], comment_id: str) -> dict[str, Any] | None:
 
 def _change[T](branch: str, change: Callable[[dict[str, Any]], T]) -> T:
     """Read the branch's file, let `change` edit it, and write it back."""
-    with _lock:
-        path = review_file(branch)
+    path = review_file(branch)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with _lock, open(path.with_name(path.name + ".lock"), "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
         data = _read(path)
         result = change(data)
-        path.parent.mkdir(parents=True, exist_ok=True)
         # Write a temporary file next to it and swap it in, so a crash can't leave half a file.
         handle, temporary = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
         with os.fdopen(handle, "w") as file:
