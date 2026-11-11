@@ -57,31 +57,28 @@ def is_valid_text(text: object) -> bool:
     return isinstance(text, str) and len(text.strip()) > 0 and len(text) <= MAX_COMMENT
 
 
-def on_page(comment: dict[str, Any], page: str) -> bool:
-    """Whether a comment belongs on a page: "overview", "changes", or a commit's sha."""
-    target = comment["target"]
-    if page == "overview":
-        return target["kind"] == "pr_body"
-    if page == "changes":
-        return target["kind"] == "line" and target["commit"] is None
-    return target["commit"] == page
+def on_page(comment: dict[str, Any], page: str, shas: Collection[str]) -> bool:
+    """Whether a comment belongs on a page: "overview", "changes", or a commit's sha.
+
+    `shas` are the branch's commits. A comment on a commit that is no longer one of them is on the
+    overview, where it is listed as one that couldn't be placed."""
+    return _page_of(comment["target"], shas) == page
 
 
-def open_counts(comments: list[dict[str, Any]]) -> dict[str, int]:
+def open_counts(comments: list[dict[str, Any]], shas: Collection[str]) -> dict[str, int]:
     """How many open comments each page has, keyed like `on_page`."""
     counts: dict[str, int] = {}
     for comment in comments:
-        if comment["status"] != "open":
-            continue
-        target = comment["target"]
-        if target["kind"] == "pr_body":
-            key = "overview"
-        elif target["commit"] is None:
-            key = "changes"
-        else:
-            key = target["commit"]
-        counts[key] = counts.get(key, 0) + 1
+        if comment["status"] == "open":
+            page = _page_of(comment["target"], shas)
+            counts[page] = counts.get(page, 0) + 1
     return counts
+
+
+def _page_of(target: dict[str, Any], shas: Collection[str]) -> str:
+    if target["kind"] == "pr_body" or (target["commit"] and target["commit"] not in shas):
+        return "overview"
+    return target["commit"] or "changes"
 
 
 def _lines_ok(start: int, end: int) -> bool:

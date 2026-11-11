@@ -79,20 +79,32 @@ def test_comments_are_added_changed_and_deleted(reviews: Path) -> None:
 
 
 def test_pages_get_their_own_comments_and_counts(reviews: Path) -> None:
-    line = add_comment("b", valid(LINE), "line")
-    all_changes = add_comment("b", valid({**LINE, "commit": None}), "all changes")
+    add_comment("b", valid(LINE), "line")
+    add_comment("b", valid({**LINE, "commit": None}), "all changes")
     message = add_comment("b", valid(MESSAGE), "message")
-    body = add_comment("b", valid(BODY), "body")
+    add_comment("b", valid(BODY), "body")
     update_comment("b", message["id"], status="resolved")
     comments = list_comments("b")
-    on = {
-        page: [c["text"] for c in comments if on_page(c, page)]
-        for page in (SHA, "changes", "overview")
-    }
-    assert on == {SHA: ["line", "message"], "changes": ["all changes"], "overview": ["body"]}
-    assert {line["id"], all_changes["id"], body["id"]}
-    assert open_counts(comments) == {
-        SHA: 1,
-        "changes": 1,
-        "overview": 1,
-    }  # resolved ones don't count
+    shas = {SHA}
+
+    def texts(page: str) -> list[str]:
+        return [c["text"] for c in comments if on_page(c, page, shas)]
+
+    assert texts(SHA) == ["line", "message"]
+    assert texts("changes") == ["all changes"]
+    assert texts("overview") == ["body"]
+    # Resolved comments aren't counted.
+    assert open_counts(comments, shas) == {SHA: 1, "changes": 1, "overview": 1}
+
+
+def test_a_comment_on_a_commit_that_is_gone_goes_on_the_overview(reviews: Path) -> None:
+    add_comment("b", valid(LINE), "lost line")
+    add_comment("b", valid(MESSAGE), "lost message")
+    comments = list_comments("b")
+    shas = {"b" * 40}  # the branch no longer has SHA
+    assert [c["text"] for c in comments if on_page(c, "overview", shas)] == [
+        "lost line",
+        "lost message",
+    ]
+    assert not [c for c in comments if on_page(c, SHA, shas)]
+    assert open_counts(comments, shas) == {"overview": 2}

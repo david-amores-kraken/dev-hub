@@ -93,6 +93,17 @@ def delete_comment(branch: str, comment_id: str) -> bool:
     return _change(branch, change)
 
 
+def set_targets(branch: str, targets: dict[str, dict[str, Any]]) -> None:
+    """Move comments (by id) to new targets. Comments that have gone since are skipped."""
+
+    def change(data: dict[str, Any]) -> None:
+        for comment in data.get("comments", []):
+            if comment.get("id") in targets:
+                comment["target"] = targets[comment["id"]]
+
+    _change(branch, change)
+
+
 def _find(data: dict[str, Any], comment_id: str) -> dict[str, Any] | None:
     return next((c for c in data.get("comments", []) if c.get("id") == comment_id), None)
 
