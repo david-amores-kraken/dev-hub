@@ -11,6 +11,7 @@ It refuses a page or feedback that contains the run's API token, as the old publ
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 import os
 import re
@@ -35,7 +36,7 @@ def publish(
     slug = slug_of(branch)
     if not SLUG_RE.match(slug) or slug == "index":
         raise SystemExit(f"refusing: {branch!r} doesn't make a usable name")
-    run_dir = run_dir or repo_dir() / ".claude" / "local" / "e2e-runs" / slug
+    run_dir = run_dir or repo_dir() / ".claude" / "local" / "e2e-runs" / run_id(slug)
     html = _read(results)
     notes = _read(feedback) if feedback else None
 
@@ -67,6 +68,11 @@ def publish(
         f" and the feedback {target.with_suffix('.feedback.md')}" if notes else ""
     )
     return f"{saved}\nhttp://{HOST}:{PORT}/features/{slug}?tab=e2e"
+
+
+def run_id(slug: str) -> str:
+    """The short name of a feature's run folder and database suffix. env.sh works out the same."""
+    return hashlib.sha1(slug.encode()).hexdigest()[:6]
 
 
 def _read(path: Path) -> str:

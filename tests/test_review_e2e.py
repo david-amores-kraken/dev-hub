@@ -110,3 +110,17 @@ def test_the_published_page_shows_up_in_the_feature(
     assert 'src="/features/feature-x/e2e/raw"' in page
     raw = client.get("/features/feature-x/e2e/raw", base_url=base_url)
     assert "data:image/png;base64," in raw.get_data(as_text=True)
+
+
+def test_the_run_id_matches_the_one_env_sh_works_out() -> None:
+    import shutil
+    import subprocess
+
+    from dev_hub.review.e2e import run_id
+
+    assert run_id("topic") == "b415e1"
+    if shutil.which("shasum"):
+        shell = subprocess.run(
+            "printf '%s' feature-x | shasum | cut -c1-6", shell=True, capture_output=True, text=True
+        ).stdout.strip()
+        assert run_id("feature-x") == shell
