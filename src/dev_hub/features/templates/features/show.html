@@ -15,6 +15,11 @@
     <span class="part missing">{{ part | capitalize }} (none yet)</span>
     {% endif %}
   {% endfor %}
+  {% if feature.branch %}
+    <a class="part" href="{{ url_for('diffs.overview', branch=feature.branch) }}">Diff{% if feature.open_comments %} <span class="pill open">{{ feature.open_comments }}</span>{% endif %} →</a>
+  {% else %}
+    <span class="part missing">Diff (no branch)</span>
+  {% endif %}
 </div>
 {% if have[tab] %}
 <iframe class="part" title="{{ tab | capitalize }}: {{ feature.title }}" src="{{ url_for('features.raw', slug=feature.slug, part=tab) }}"></iframe>

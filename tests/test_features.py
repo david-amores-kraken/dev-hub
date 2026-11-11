@@ -91,3 +91,46 @@ def test_unknown_features_parts_and_slugs_are_404(
         "/features/a-branch/other/raw",
     ):
         assert client.get(url, base_url=base_url).status_code == 404
+
+
+def test_a_feature_whose_branch_has_a_diff_links_to_it(
+    plans: Path, reports: Path, repo: Path, reviews: Path, client: FlaskClient, base_url: str
+) -> None:
+    from dev_hub.diffs.store import add_comment, set_triage
+
+    (plans / "feature-x.html").write_text(PLAN)
+    target = {"kind": "pr_body", "commit": None, "start": 1, "end": 1, "quote": "q"}
+    add_comment("feature/x", target, "open")
+    dismissed = add_comment("feature/x", target, "dismissed")
+    set_triage("feature/x", dismissed["id"], "dismiss")
+
+    [feature] = list_features()
+    assert (feature.branch, feature.open_comments) == ("feature/x", 1)
+    listing = client.get("/features/", base_url=base_url).get_data(as_text=True)
+    assert 'href="/diffs/feature/x">diff · 1 open</a>' in listing
+    page = client.get("/features/feature-x", base_url=base_url).get_data(as_text=True)
+    assert 'href="/diffs/feature/x"' in page
+    assert "Diff" in page and "no branch" not in page
+
+
+def test_a_feature_without_a_branch_says_so(
+    plans: Path, reports: Path, client: FlaskClient, base_url: str
+) -> None:
+    (plans / "a-branch.html").write_text(PLAN)
+    [feature] = list_features()
+    assert (feature.branch, feature.open_comments) == (None, 0)
+    assert "diffs/" not in client.get("/features/", base_url=base_url).get_data(
+        as_text=True
+    ).replace('href="/diffs/"', "")
+    page = client.get("/features/a-branch", base_url=base_url).get_data(as_text=True)
+    assert "Diff (no branch)" in page
+
+
+def test_the_diff_page_links_back_to_the_feature(
+    plans: Path, reports: Path, repo: Path, reviews: Path, client: FlaskClient, base_url: str
+) -> None:
+    before = client.get("/diffs/feature/x", base_url=base_url).get_data(as_text=True)
+    assert "Feature: plan and report" not in before
+    (plans / "feature-x.html").write_text(PLAN)
+    after = client.get("/diffs/feature/x", base_url=base_url).get_data(as_text=True)
+    assert 'href="/features/feature-x">Feature: plan and report' in after
