@@ -1,4 +1,4 @@
-"""Keep the tests away from the real ~/pr-reviews and ~/Plans."""
+"""Keep the tests away from the real ~/pr-reviews, ~/Plans and ~/Reports."""
 
 from __future__ import annotations
 
@@ -25,7 +25,15 @@ def plans(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def client(plans: Path) -> FlaskClient:
+def reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    folder = tmp_path / "Reports"
+    folder.mkdir()
+    monkeypatch.setenv("DEV_HUB_REPORTS", str(folder))
+    return folder
+
+
+@pytest.fixture
+def client(plans: Path, reports: Path) -> FlaskClient:
     return create_app().test_client()
 
 

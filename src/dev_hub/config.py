@@ -12,3 +12,8 @@ PORT = int(os.environ.get("DEV_HUB_PORT", "8765"))
 def plans_dir() -> Path:
     """Where the feature skill saves plans (and their index.html)."""
     return Path(os.environ.get("DEV_HUB_PLANS") or Path.home() / "Plans")
+
+
+def reports_dir() -> Path:
+    """Where the feature skill saves reports (and their index.html)."""
+    return Path(os.environ.get("DEV_HUB_REPORTS") or Path.home() / "Reports")

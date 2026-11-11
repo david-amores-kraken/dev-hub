@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ feature.title }} · dev hub{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('features.static', filename='features.css') }}">
+{% endblock %}
+{% block content %}
+<p class="meta"><a href="{{ url_for('features.index') }}">All features</a></p>
+<h1>{{ feature.title }}</h1>
+<p class="meta"><span>{{ feature.slug }}</span></p>
+<div class="parts">
+  {% for part in parts %}
+    {% if have[part] %}
+    <a class="part" href="{{ url_for('features.show', slug=feature.slug, tab=part) }}" {% if part == tab %}aria-current="page"{% endif %}>{{ part | capitalize }}</a>
+    {% else %}
+    <span class="part missing">{{ part | capitalize }} (none yet)</span>
+    {% endif %}
+  {% endfor %}
+</div>
+{% if have[tab] %}
+<iframe class="part" title="{{ tab | capitalize }}: {{ feature.title }}" src="{{ url_for('features.raw', slug=feature.slug, part=tab) }}"></iframe>
+{% endif %}
+{% endblock %}
