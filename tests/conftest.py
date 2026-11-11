@@ -66,3 +66,20 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     monkeypatch.setenv("DEV_HUB_REPO", str(folder))
     monkeypatch.setenv("DEV_HUB_BASE", "master")
     return folder
+
+
+@pytest.fixture
+def skills(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """A stand-in for ~/.claude: the self-review brief and one writing preference file."""
+    home = tmp_path / "claude"
+    brief = home / "skills" / "self-review" / "reference" / "brief.md"
+    brief.parent.mkdir(parents=True)
+    brief.write_text(
+        "# Self-review brief\n\nRules.\n\n```bash\n"
+        "python3 /Users/x/.claude/skills/self-review/scripts/post.py <run folder> <your persona key>\n"
+        "```\n"
+    )
+    (home / "comment-preferences.md").write_text("no comments")
+    monkeypatch.setattr("dev_hub.review.prepare.CLAUDE", home)
+    monkeypatch.setattr("dev_hub.review.prepare.BRIEF", brief)
+    return home
