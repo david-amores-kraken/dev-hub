@@ -25,7 +25,7 @@ def test_the_run_folder_has_what_the_personas_read(repo: Path, reviews: Path, sk
     )
     personas, folder = run_folder(repo)
 
-    assert folder.parent.parent == repo / ".claude" / "local" / "self-review"
+    assert folder.parent.parent == repo / ".claude" / "local" / "local-review"
     assert folder.parent.name == "branch-feature-x"
     assert "ux" not in personas and "correctness" in personas
     names = {p.name for p in folder.iterdir()}
@@ -63,19 +63,16 @@ def test_the_brief_posts_to_the_hub_and_says_the_review_is_local(
 ) -> None:
     _, folder = run_folder(repo)
     brief = (folder / "brief.md").read_text()
-    assert "scripts/post.py" not in brief
+    assert "{POST_COMMAND}" not in brief
     assert "-m dev_hub.review post <run folder> <your persona key>" in brief
-    assert "This is a local review" in brief
-    assert brief.startswith("# Self-review brief")
+    assert brief.startswith("# Local review brief")
 
 
 def test_a_brief_without_the_post_command_is_refused(
     repo: Path, reviews: Path, skills: Path
 ) -> None:
-    (skills / "skills" / "self-review" / "reference" / "brief.md").write_text(
-        "# Brief\n\nNothing.\n"
-    )
-    with pytest.raises(SystemExit, match="no longer has"):
+    skills.write_text("# Brief\n\nNothing.\n")
+    with pytest.raises(SystemExit, match="POST_COMMAND"):
         run_folder(repo)
 
 

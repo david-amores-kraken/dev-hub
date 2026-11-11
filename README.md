@@ -6,7 +6,7 @@ section per tool:
 | Section | URL | What it shows | Lives in |
 |---|---|---|---|
 | PRs | `/prs/` | PRs waiting for my review, and the briefs made for them | the `pr-brief` skill (`~/.claude/skills/pr-brief`) |
-| Features | `/features/` | One page per feature, with its plan and report side by side as tabs | `src/dev_hub/features` |
+| Features | `/features/` | One page per feature, with its plan, report and e2e results as tabs, and a link to its diff | `src/dev_hub/features` |
 | Diffs | `/diffs/` | A branch of kraken-core commit by commit, with a PR title and body to write | `src/dev_hub/diffs` |
 | Plans | `/plans/` | Plans the `feature` skill saved in `~/Plans` | `src/dev_hub/plans` |
 
@@ -19,7 +19,7 @@ section per tool:
   depends on it (`[tool.uv.sources]` in `pyproject.toml`); it doesn't depend on the hub.
 - Sections extend `templates/base.html`, which has the blocks `title`, `head`, `content`, `scripts`.
   `static/hub.css` has the shared look; a section adds its own CSS next to its templates.
-- Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`, `~/Reports`). The only data the hub owns is what I write in the Diffs section (PR title and body, comments), in `~/Reviews`.
+- Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`, `~/Reports`, `~/E2E`). The only data the hub owns is what I write in the Diffs section (PR title and body, comments), in `~/Reviews`.
 
 ## Safety
 
@@ -61,9 +61,9 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
 
 ### Reviewing a branch with the personas
 
-The reviewer personas of the `self-review` skill can review a branch here instead of a PR. They
-read a run folder and write a findings file, so they are unchanged. These commands replace the two
-steps that talked to GitHub (`skills/local-review/SKILL.md` explains how to set it up and use it):
+The reviewer personas review a branch here, with no PR (`skills/local-review/SKILL.md` explains
+how to set it up and use it). They read a run folder and write a findings file; these commands make
+the folder and take the findings:
 
 ```bash
 .venv/bin/python -m dev_hub.review prepare <branch> [--final]   # make the run folder
@@ -84,6 +84,9 @@ steps that talked to GitHub (`skills/local-review/SKILL.md` explains how to set 
 - `pr set` is how an agent writes the PR title and description that the Overview box shows. A part
   that is left out stays as it was.
 - A feature page links to its branch's diff (the Diff link), and the diff links back.
+- `e2e publish <branch> <page>` saves an e2e-verify results page as the feature's E2E tab, with the
+  screenshots embedded, at `~/E2E/<slug>.html` (`DEV_HUB_E2E` changes the folder). Skill feedback
+  goes next to it as `<slug>.feedback.md`.
 - The Kraken helpers the preparation step needs are loaded from `~/.claude/lib/review_context.py`.
 
 ## Running it

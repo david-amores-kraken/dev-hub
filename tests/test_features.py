@@ -38,10 +38,11 @@ def test_report_indexes_and_odd_slugs_are_not_features(plans: Path, reports: Pat
 
 
 def test_list_page_shows_each_feature_with_what_it_has(
-    plans: Path, reports: Path, client: FlaskClient, base_url: str
+    plans: Path, reports: Path, e2e: Path, client: FlaskClient, base_url: str
 ) -> None:
     (plans / "a-branch.html").write_text(PLAN)
     (reports / "a-branch.html").write_text(REPORT)
+    (e2e / "a-branch.html").write_text(REPORT)
     page = client.get("/features/", base_url=base_url).get_data(as_text=True)
     assert "/features/a-branch" in page
     assert 'href="/features/" ' in page  # nav
@@ -134,3 +135,41 @@ def test_the_diff_page_links_back_to_the_feature(
     (plans / "feature-x.html").write_text(PLAN)
     after = client.get("/diffs/feature/x", base_url=base_url).get_data(as_text=True)
     assert 'href="/features/feature-x">Feature: plan and report' in after
+
+
+def test_e2e_results_are_a_part_of_the_feature(
+    plans: Path, reports: Path, e2e: Path, client: FlaskClient, base_url: str
+) -> None:
+    (plans / "a-branch.html").write_text(PLAN)
+    (e2e / "a-branch.html").write_text(
+        "<html><head><title>E2E</title></head><body>ok</body></html>"
+    )
+    (e2e / "a-branch.feedback.md").write_text("proposals")  # not a results page
+    [feature] = list_features()
+    assert (feature.has_plan, feature.has_report, feature.has_e2e) == (True, False, True)
+
+    page = client.get("/features/a-branch?tab=e2e", base_url=base_url).get_data(as_text=True)
+    assert 'src="/features/a-branch/e2e/raw"' in page
+    assert ">E2E</a>" in page
+    raw = client.get("/features/a-branch/e2e/raw", base_url=base_url)
+    assert raw.status_code == 200 and "ok" in raw.get_data(as_text=True)
+    assert raw.headers["Content-Security-Policy"].startswith("sandbox")
+    listing = client.get("/features/", base_url=base_url).get_data(as_text=True)
+    assert '<span class="pill ">e2e</span>' in listing or '<span class="pill">e2e</span>' in listing
+
+
+def test_a_feature_may_have_only_e2e_results_and_odd_slugs_are_404(
+    plans: Path, reports: Path, e2e: Path, client: FlaskClient, base_url: str
+) -> None:
+    (e2e / "only-e2e.html").write_text("<html><head><title>T</title></head></html>")
+    (e2e / "index.html").write_text("index")
+    assert [f.slug for f in list_features()] == ["only-e2e"]
+    (e2e.parent / "secret.html").write_text("secret")
+    for url in ("/features/only-e2e/e2e/raw",):
+        assert client.get(url, base_url=base_url).status_code == 200
+    for url in (
+        "/features/index/e2e/raw",
+        "/features/..%2Fsecret/e2e/raw",
+        "/features/nope/e2e/raw",
+    ):
+        assert client.get(url, base_url=base_url).status_code == 404

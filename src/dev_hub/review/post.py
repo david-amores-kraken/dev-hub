@@ -1,6 +1,6 @@
 """Put one persona's findings into the dev hub.
 
-Reads `<run folder>/findings/<persona>.json` (the format is in the self-review skill's
+Reads `<run folder>/findings/<persona>.json` (the format is in the local-review skill's
 reference/brief.md), checks it, and saves it in the branch's review file:
 
 - A finding on a line of the diff becomes a comment on the "All changes" page.
