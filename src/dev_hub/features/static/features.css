@@ -1,0 +1,10 @@
+ul.features { list-style: none; padding: 0; margin: 12px 0; }
+ul.features li { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; margin: 8px 0; }
+ul.features a { font-weight: 600; text-decoration: none; }
+ul.features a:hover { text-decoration: underline; }
+.pill.missing { color: var(--muted); border-style: dashed; text-decoration: line-through; }
+.parts { display: flex; gap: 8px; margin: 12px 0 8px; }
+.part { font-size: 14px; padding: 4px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); text-decoration: none; }
+.part[aria-current="page"] { border-color: var(--accent); font-weight: 600; }
+.part.missing { color: var(--muted); border-style: dashed; }
+iframe.part { width: 100%; height: calc(100vh - 200px); min-height: 480px; padding: 0; border: 1px solid var(--line); border-radius: 8px; background: #fff; }

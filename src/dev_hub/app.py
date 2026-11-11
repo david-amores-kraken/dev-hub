@@ -14,12 +14,14 @@ from flask import Flask, Response, jsonify, redirect, request, url_for
 from werkzeug.wrappers import Response as BaseResponse
 
 from dev_hub.config import HOST, PORT
+from dev_hub.features import blueprint as features
 from dev_hub.plans import blueprint as plans
 from pr_brief.web import blueprint as prs
 
 # (nav label, blueprint, URL prefix), in nav order.
 SECTIONS = (
     ("PRs", prs, "/prs"),
+    ("Features", features, "/features"),
     ("Plans", plans, "/plans"),
 )
 

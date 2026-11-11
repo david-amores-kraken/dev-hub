@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Features · dev hub{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('features.static', filename='features.css') }}">
+{% endblock %}
+{% block content %}
+<h1>Features</h1>
+<p class="meta">Each feature groups its plan and its report, newest first.</p>
+{% if features %}
+<ul class="features">
+  {% for feature in features %}
+  <li>
+    <a href="{{ url_for('features.show', slug=feature.slug) }}">{{ feature.title }}</a>
+    <div class="meta">
+      <span>{{ feature.updated.replace("T", " ") }}</span>
+      <span>{{ feature.slug }}</span>
+      <span class="pill {{ '' if feature.has_plan else 'missing' }}">plan</span>
+      <span class="pill {{ '' if feature.has_report else 'missing' }}">report</span>
+    </div>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No features yet.</p>
+{% endif %}
+{% endblock %}
