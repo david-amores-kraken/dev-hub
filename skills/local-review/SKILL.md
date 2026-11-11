@@ -68,6 +68,17 @@ values. Give each the same short prompt:
 Say which personas are reviewing the branch, and that their findings will appear in the hub as
 they finish. When they do, relay one line per persona: LGTM or N findings.
 
+## The PR title and description
+
+The draft PR text is saved in the hub, so it is ready to copy when the branch is pushed to origin.
+
+```bash
+PY -m dev_hub.review pr show <branch>
+PY -m dev_hub.review pr set <branch> --title "<one line>" --body-file -
+```
+
+`--body-file -` reads the description from stdin. A part that is left out stays as it was.
+
 ## Acting on comments
 
 When the user says they have left comments in the hub:
