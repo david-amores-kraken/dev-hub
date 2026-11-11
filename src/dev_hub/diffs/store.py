@@ -1,9 +1,13 @@
 """What I write about a branch: the title and body of the PR it will become, and my comments.
 
 Each branch gets one JSON file in the reviews folder, named after the branch (with `/` written as
-`%2F`). The file is `{"pr": {"title": ..., "body": ...}, "comments": [...]}`. A comment is
-`{id, status, text, created, target}`, and `comments.py` says what a target is. Keys the hub doesn't
-know are kept when it saves, so later features can add to the same file.
+`%2F`). The file is `{"pr": {"title": ..., "body": ...}, "comments": [...], "reviews": [...]}`. A comment is
+`{id, status, text, created, target}`, and `comments.py` says what a target is. Comments I write
+have nothing more. A finding from a reviewer persona also has `persona`, `author` (its name),
+`finding_id`, `severity`, and `triage` once I answer it ("address" or "dismiss"). Any comment can
+have `replies` from the agent that addressed it. A review is a persona's summary of one pass over
+the branch. Keys the hub doesn't know are kept when it saves, so later features can add to the
+same file.
 """
 
 from __future__ import annotations
@@ -58,16 +62,68 @@ def list_comments(branch: str) -> list[dict[str, Any]]:
     return list(_read(review_file(branch)).get("comments", []))
 
 
-def add_comment(branch: str, target: dict[str, Any], text: str) -> dict[str, Any]:
+def add_comment(branch: str, target: dict[str, Any], text: str, **more: Any) -> dict[str, Any]:
+    """Save a comment. `more` adds the fields of a persona's finding."""
     comment = {
         "id": uuid.uuid4().hex[:12],
         "status": "open",
         "text": text,
-        "created": datetime.now().astimezone().isoformat(timespec="seconds"),
+        "created": _now(),
         "target": target,
+        **more,
     }
     _change(branch, lambda data: data.setdefault("comments", []).append(comment))
     return comment
+
+
+def set_triage(branch: str, comment_id: str, triage: str | None) -> dict[str, Any] | None:
+    """Mark a finding "address" or "dismiss", or None to take the mark off."""
+
+    def change(data: dict[str, Any]) -> dict[str, Any] | None:
+        comment = _find(data, comment_id)
+        if comment is not None:
+            if triage is None:
+                comment.pop("triage", None)
+            else:
+                comment["triage"] = triage
+        return comment
+
+    return _change(branch, change)
+
+
+def add_reply(
+    branch: str, comment_id: str, author: str, text: str, commit: str | None = None
+) -> dict[str, Any] | None:
+    """Answer a comment and mark it resolved, as the agent does when it has dealt with it."""
+
+    def change(data: dict[str, Any]) -> dict[str, Any] | None:
+        comment = _find(data, comment_id)
+        if comment is not None:
+            reply = {"author": author, "text": text, "commit": commit, "created": _now()}
+            comment.setdefault("replies", []).append(reply)
+            comment["status"] = "resolved"
+        return comment
+
+    return _change(branch, change)
+
+
+def list_reviews(branch: str) -> list[dict[str, Any]]:
+    """Every persona review of the branch, oldest first."""
+    return list(_read(review_file(branch)).get("reviews", []))
+
+
+def add_review(branch: str, review: dict[str, Any], resolved_findings: list[str]) -> dict[str, Any]:
+    """Save a persona's review, and resolve the findings it says are fixed."""
+    review = {"id": uuid.uuid4().hex[:12], "created": _now(), **review}
+
+    def change(data: dict[str, Any]) -> None:
+        data.setdefault("reviews", []).append(review)
+        for comment in data.get("comments", []):
+            if comment.get("finding_id") in resolved_findings:
+                comment["status"] = "resolved"
+
+    _change(branch, change)
+    return review
 
 
 def update_comment(
@@ -104,6 +160,10 @@ def set_targets(branch: str, targets: dict[str, dict[str, Any]]) -> None:
                 comment["target"] = targets[comment["id"]]
 
     _change(branch, change)
+
+
+def _now() -> str:
+    return datetime.now().astimezone().isoformat(timespec="seconds")
 
 
 def _find(data: dict[str, Any], comment_id: str) -> dict[str, Any] | None:
