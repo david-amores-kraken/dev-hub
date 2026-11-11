@@ -12,6 +12,27 @@
     <span class="meta" id="status" role="status"></span>
   </div>
 </form>
+{% if reviews %}
+<h2>Reviews</h2>
+<p class="meta">What the reviewer personas said on each pass. Their findings are comments on the code, the commit messages and the description.</p>
+<div class="reviews">
+  {% for r in reviews %}
+  <details class="review" {% if r.latest %}open{% endif %}>
+    <summary>{{ r.emoji }} {{ r.name }} <span class="pill">{{ 'LGTM' if r.verdict == 'lgtm' else r.findings | length ~ ' finding' ~ ('' if r.findings | length == 1 else 's') }}</span> <span class="meta">{{ r.created[:16].replace('T', ' ') }} · {{ r.sha[:7] }}</span></summary>
+    <p>{{ r.summary }}</p>
+    {% if r.resolved %}<p class="meta">Resolved since the last review: {{ r.resolved | join(', ') }}</p>{% endif %}
+    {% if r.unplaced %}
+    <p class="meta">Not on any line:</p>
+    <ul>
+      {% for f in r.unplaced %}
+      <li><strong>{{ f.finding_id }}</strong> · {{ f.severity }} · {{ f.where }}<pre class="message">{{ f.body }}</pre></li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </details>
+  {% endfor %}
+</div>
+{% endif %}
 <h3>Comment on the description</h3>
 <p class="meta" id="body-hint">Click a line number to comment on a line. Shift-click a second one to comment on a range. Shows the saved description.</p>
 <div class="text-lines" id="body-lines" data-kind="pr_body" data-text="{{ description.body }}"></div>

@@ -20,6 +20,7 @@ from typing import Any
 KINDS = ("line", "message", "pr_body")
 SIDES = ("old", "new")
 STATUSES = ("open", "resolved")
+TRIAGE = ("address", "dismiss")
 MAX_COMMENT = 20_000
 MAX_QUOTE = 20_000
 MAX_FILE = 1_000
@@ -69,7 +70,7 @@ def open_counts(comments: list[dict[str, Any]], shas: Collection[str]) -> dict[s
     """How many open comments each page has, keyed like `on_page`."""
     counts: dict[str, int] = {}
     for comment in comments:
-        if comment["status"] == "open":
+        if comment["status"] == "open" and comment.get("triage") != "dismiss":
             page = _page_of(comment["target"], shas)
             counts[page] = counts.get(page, 0) + 1
     return counts

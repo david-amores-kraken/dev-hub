@@ -59,6 +59,27 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
   colours. Both are vendored under `diffs/static/vendor`; there is no build step. To update them,
   download the same files from the new version.
 
+### Reviewing a branch with the personas
+
+The reviewer personas of the `self-review` skill can review a branch here instead of a PR. They
+read a run folder and write a findings file, so they are unchanged. These commands replace the two
+steps that talked to GitHub (`skills/local-review/SKILL.md` explains how to set it up and use it):
+
+```bash
+.venv/bin/python -m dev_hub.review prepare <branch> [--final]   # make the run folder
+.venv/bin/python -m dev_hub.review post <run folder> <persona>  # what each persona runs at the end
+.venv/bin/python -m dev_hub.review todo <branch>                # the comments to act on, as JSON
+.venv/bin/python -m dev_hub.review address <branch> <id> --reply "..." [--commit <sha>] [--as <name>]
+```
+
+- A finding on a diff line is a comment on "All changes". One on the PR description or a commit
+  message is a comment on that text. One that fits nowhere stays in the persona's review.
+- Each persona's summary and verdict show under Reviews on the overview.
+- A persona's finding is only acted on if I click **Address** on it. **Dismiss** hides it. My own
+  comments are always acted on. `todo` lists both, and `address` records the agent's reply and
+  resolves the comment.
+- The Kraken helpers the preparation step needs are loaded from `~/.claude/lib/review_context.py`.
+
 ## Running it
 
 It starts at login through launchd (`~/Library/LaunchAgents/com.davidamores.dev-hub.plist`, logs in

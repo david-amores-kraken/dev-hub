@@ -268,12 +268,16 @@ function start(review) {
 
   function card(comment, showWhere) {
     const el = document.createElement("div");
-    el.className = "comment" + (comment.status === "resolved" ? " resolved" : "");
+    const dismissed = comment.triage === "dismiss";
+    el.className = "comment" + (comment.status === "resolved" ? " resolved" : "") + (dismissed ? " dismissed" : "");
+    if (comment.severity) el.dataset.severity = comment.severity;
     const head = document.createElement("div");
     head.className = "meta";
     const when = comment.created.slice(0, 16).replace("T", " ");
     const commitName = showWhere && comment.target.subject ? `“${comment.target.subject}”` : null;
-    head.textContent = [commitName, showWhere ? describe(comment.target) : null, when, comment.status === "resolved" ? "resolved" : null]
+    const who = comment.finding_id ? `${comment.author} ${comment.finding_id} · ${comment.severity}` : null;
+    const state = dismissed ? "dismissed" : comment.status === "resolved" ? "resolved" : comment.triage === "address" ? "to address" : null;
+    head.textContent = [who, commitName, showWhere ? describe(comment.target) : null, when, state]
       .filter(Boolean).join(" · ");
     el.append(head);
     if (showWhere) {
@@ -295,8 +299,33 @@ function start(review) {
     const text = document.createElement("div");
     text.className = "text";
     text.textContent = comment.text;
+    el.append(text);
+    for (const reply of comment.replies ?? []) {
+      const answer = document.createElement("div");
+      answer.className = "reply";
+      const by = document.createElement("div");
+      by.className = "meta";
+      by.textContent = [reply.author, reply.commit ? `in ${reply.commit}` : null, reply.created.slice(0, 16).replace("T", " ")]
+        .filter(Boolean).join(" · ");
+      const words = document.createElement("div");
+      words.className = "text";
+      words.textContent = reply.text;
+      answer.append(by, words);
+      el.append(answer);
+    }
     const actions = document.createElement("div");
     actions.className = "controls";
+    if (comment.finding_id) {
+      // A reviewer's finding is only worked on if I say so.
+      for (const [choice, label] of [["address", "Address"], ["dismiss", "Dismiss"]]) {
+        const on = comment.triage === choice;
+        const mark = button(on ? `Undo ${label.toLowerCase()}` : label, "plain");
+        mark.addEventListener("click", () => act(async () => {
+          replace(await post(`${base}/${comment.id}`, { triage: on ? null : choice }));
+        }));
+        actions.append(mark);
+      }
+    }
     const resolve = button(comment.status === "open" ? "Resolve" : "Reopen", "plain");
     resolve.addEventListener("click", () => act(async () => {
       replace(await post(`${base}/${comment.id}`, { status: comment.status === "open" ? "resolved" : "open" }));
@@ -310,7 +339,7 @@ function start(review) {
       comments = comments.filter(c => c.id !== comment.id);
     }));
     actions.append(resolve, edit, remove);
-    el.append(text, actions);
+    el.append(actions);
     return el;
   }
 

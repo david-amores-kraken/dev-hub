@@ -108,3 +108,74 @@ def test_a_comment_on_a_commit_that_is_gone_goes_on_the_overview(reviews: Path) 
     ]
     assert not [c for c in comments if on_page(c, SHA, shas)]
     assert open_counts(comments, shas) == {"overview": 2}
+
+
+def test_two_programs_adding_comments_at_once_lose_none(reviews: Path) -> None:
+    # The hub and the review commands are separate processes sharing one file.
+    import subprocess
+    import sys
+
+    code = (
+        "from dev_hub.diffs.store import add_comment\n"
+        "t = {'kind': 'pr_body', 'commit': None, 'start': 1, 'end': 1, 'quote': 'q'}\n"
+        "for n in range(15): add_comment('b', t, 'x')\n"
+    )
+    env = {"DEV_HUB_REVIEWS": str(reviews), "PATH": "/usr/bin:/bin"}
+    procs = [subprocess.Popen([sys.executable, "-c", code], env=env) for _ in range(4)]
+    assert [p.wait() for p in procs] == [0, 0, 0, 0]
+    assert len(list_comments("b")) == 60
+
+
+def test_a_finding_keeps_who_wrote_it_and_can_be_triaged_and_answered(reviews: Path) -> None:
+    from dev_hub.diffs.store import add_reply, set_triage
+
+    finding = add_comment(
+        "b",
+        valid(LINE),
+        "off by one",
+        persona="correctness",
+        author="🧠 Correctness",
+        finding_id="CR-1",
+        severity="blocker",
+    )
+    assert (finding["persona"], finding["finding_id"], finding["severity"]) == (
+        "correctness",
+        "CR-1",
+        "blocker",
+    )
+    assert "triage" not in finding
+
+    marked = set_triage("b", finding["id"], "address")
+    assert marked and marked["triage"] == "address"
+    cleared = set_triage("b", finding["id"], None)
+    assert cleared and "triage" not in cleared
+    assert set_triage("b", "nope", "address") is None
+
+    set_triage("b", finding["id"], "address")
+    answered = add_reply("b", finding["id"], "TARS", "Fixed it.", commit="abc1234")
+    assert answered
+    assert (answered["status"], answered["triage"]) == ("resolved", "address")
+    assert [(r["author"], r["text"], r["commit"]) for r in answered["replies"]] == [
+        ("TARS", "Fixed it.", "abc1234")
+    ]
+    assert add_reply("b", "nope", "TARS", "x") is None
+
+
+def test_a_review_resolves_the_findings_it_says_are_fixed(reviews: Path) -> None:
+    from dev_hub.diffs.store import add_review, list_reviews
+
+    first = add_comment("b", valid(LINE), "one", finding_id="CR-1")
+    second = add_comment("b", valid(LINE), "two", finding_id="CR-2")
+    review = add_review("b", {"persona": "correctness", "summary": "Better."}, ["CR-1"])
+    assert list_reviews("b") == [review]
+    statuses = {c["id"]: c["status"] for c in list_comments("b")}
+    assert statuses == {first["id"]: "resolved", second["id"]: "open"}
+
+
+def test_dismissed_findings_are_not_counted_as_open(reviews: Path) -> None:
+    from dev_hub.diffs.store import set_triage
+
+    finding = add_comment("b", valid(BODY), "meh")
+    add_comment("b", valid(BODY), "keep")
+    set_triage("b", finding["id"], "dismiss")
+    assert open_counts(list_comments("b"), set()) == {"overview": 1}

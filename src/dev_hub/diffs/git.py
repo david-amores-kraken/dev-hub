@@ -121,3 +121,14 @@ def _git(*args: str, stdin: str | None = None) -> str:
     if result.returncode != 0:
         raise GitError(result.stderr.strip() or f"git {args[0]} failed")
     return result.stdout
+
+
+def branch_tip(branch: str) -> str:
+    """The sha of the branch's newest commit."""
+    return _git("rev-parse", "--verify", f"refs/heads/{branch}^{{commit}}").strip()
+
+
+def branch_files(branch: str) -> list[str]:
+    """The files the branch changed since it left the base."""
+    output = _git("diff", "-M", "--name-only", f"{base_ref()}...refs/heads/{branch}")
+    return output.splitlines()

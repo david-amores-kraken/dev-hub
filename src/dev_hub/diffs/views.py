@@ -8,7 +8,14 @@ from flask import Blueprint, abort, jsonify, render_template, request
 from werkzeug.wrappers import Response
 
 from dev_hub.diffs import git
-from dev_hub.diffs.comments import STATUSES, is_valid_text, on_page, open_counts, parse_target
+from dev_hub.diffs.comments import (
+    STATUSES,
+    TRIAGE,
+    is_valid_text,
+    on_page,
+    open_counts,
+    parse_target,
+)
 from dev_hub.diffs.follow import follow
 from dev_hub.diffs.git import Commit, GitError
 from dev_hub.diffs.store import (
@@ -16,8 +23,10 @@ from dev_hub.diffs.store import (
     MAX_TITLE,
     add_comment,
     delete_comment,
+    list_reviews,
     load_description,
     save_description,
+    set_triage,
     update_comment,
 )
 
@@ -46,6 +55,7 @@ def overview(branch: str) -> str:
         follow(branch, commits, body=description.body),
         page="overview",
         description=description,
+        reviews=_newest_first(list_reviews(branch)),
         max_title=MAX_TITLE,
         max_body=MAX_BODY,
     )
@@ -113,7 +123,11 @@ def change_comment(branch: str, comment_id: str) -> Reply:
         return jsonify(error="the comment is empty or too long"), 400
     if status is not None and status not in STATUSES:
         return jsonify(error="status must be open or resolved"), 400
+    if "triage" in data and data["triage"] not in (None, *TRIAGE):
+        return jsonify(error="triage must be address, dismiss or null"), 400
     comment = update_comment(branch, comment_id, text=text, status=status)
+    if comment is not None and "triage" in data:
+        comment = set_triage(branch, comment_id, data["triage"])
     if comment is None:
         abort(404)
     return jsonify(comment)
@@ -136,6 +150,16 @@ def _require_branch(branch: str) -> None:
 def _commits(branch: str) -> list[Commit]:
     _require_branch(branch)
     return git.list_commits(branch)
+
+
+def _newest_first(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Reviews, newest first, each marked `latest` if no later review is from the same persona."""
+    seen: set[str] = set()
+    ordered = []
+    for review in reversed(reviews):
+        ordered.append({**review, "latest": review["persona"] not in seen})
+        seen.add(review["persona"])
+    return ordered
 
 
 def _page(
