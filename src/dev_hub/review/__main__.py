@@ -14,6 +14,7 @@ import sys
 from pathlib import Path
 
 from dev_hub.review import description
+from dev_hub.review.facts import facts
 from dev_hub.review.helpers import load_helpers
 from dev_hub.review.post import post
 from dev_hub.review.prepare import prepare
@@ -43,6 +44,9 @@ def main() -> None:
     address_parser.add_argument("--commit", help="the commit that deals with it")
     address_parser.add_argument("--as", dest="author", default="Agent", help="who is answering")
 
+    facts_parser = commands.add_parser("facts", help="my feedback and the change's size, as JSON")
+    facts_parser.add_argument("branch")
+
     pr_parser = commands.add_parser("pr", help="read or write the draft PR title and description")
     pr_commands = pr_parser.add_subparsers(dest="pr_command", required=True)
     show_parser = pr_commands.add_parser("show", help="print the title and description as JSON")
@@ -63,6 +67,8 @@ def main() -> None:
         print(post(args.run_folder, args.persona, dry_run=args.dry_run))
     elif args.command == "todo":
         print(json.dumps(todo(args.branch), indent=2, ensure_ascii=False))
+    elif args.command == "facts":
+        print(json.dumps(facts(args.branch), indent=2, ensure_ascii=False))
     elif args.command == "pr" and args.pr_command == "show":
         print(json.dumps(description.show(args.branch), indent=2, ensure_ascii=False))
     elif args.command == "pr":

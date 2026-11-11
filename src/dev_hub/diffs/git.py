@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 import subprocess
 from dataclasses import dataclass
+from typing import Any
 
 from dev_hub.config import base_ref, repo_dir
 
@@ -132,3 +133,18 @@ def branch_files(branch: str) -> list[str]:
     """The files the branch changed since it left the base."""
     output = _git("diff", "-M", "--name-only", f"{base_ref()}...refs/heads/{branch}")
     return output.splitlines()
+
+
+def branch_stats(branch: str) -> dict[str, Any]:
+    """How big the branch's change is: files, lines added and removed, and when it was started."""
+    numstat = _git("diff", "-M", "--numstat", f"{base_ref()}...refs/heads/{branch}")
+    files = [line.split("\t") for line in numstat.splitlines() if line]
+    dates = _git("log", "--format=%cI", f"{base_ref()}..refs/heads/{branch}").split()
+    return {
+        "files": [name for _, _, name in files],
+        # Binary files show "-" instead of counts.
+        "insertions": sum(int(added) for added, _, _ in files if added.isdigit()),
+        "deletions": sum(int(removed) for _, removed, _ in files if removed.isdigit()),
+        "commits": len(dates),
+        "first_commit_at": min(dates, default=None),
+    }
