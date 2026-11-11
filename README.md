@@ -49,8 +49,12 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
 - Click a line number to comment on a line, and shift-click a second one for a range. This works
   in diffs, commit messages and the saved PR description. A comment is saved at once (there is no
   review to submit), and can be edited, resolved or deleted. Comments live in the same review file
-  as the PR body, with the commit's subject and patch id and a quote of the lines, so they can be
-  matched up again after a rebase.
+  as the PR body, with the commit's subject and patch id and a quote of the lines.
+- Comments follow a rebase. Whenever a page of a branch is shown, a comment whose commit sha has
+  gone is matched to the commit that replaced it (same patch id, else same subject), and its lines
+  are searched for by their quote. What moved is saved. A comment that can't be matched, or whose
+  lines are gone, is left as it was and listed as "Comments I couldn't place" (on the overview if
+  its commit is gone) with its quote, so it is never shown against the wrong code.
 - Diffs are drawn in the browser by [diff2html](https://diff2html.xyz) 3.4.52, with highlight.js
   colours. Both are vendored under `diffs/static/vendor`; there is no build step. To update them,
   download the same files from the new version.

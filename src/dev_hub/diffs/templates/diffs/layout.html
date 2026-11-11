@@ -24,7 +24,7 @@
     <div id="review" data-base="{{ url_for('diffs.create_comment', branch=branch) }}" data-scope="{{ 'commit' if commit else page }}" data-commit="{{ commit.sha if commit else '' }}">
       <div id="unplaced" class="unplaced" hidden>
         <h3>Comments I couldn't place</h3>
-        <p class="meta">The lines they were about aren't on this page any more.</p>
+        <p class="meta">Their commit or their lines have changed, so they can't be shown on the code. The quote is what they were about.</p>
         <div class="comments"></div>
       </div>
       {% block part %}{% endblock %}
