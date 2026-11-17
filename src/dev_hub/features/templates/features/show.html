@@ -4,15 +4,16 @@
 <link rel="stylesheet" href="{{ url_for('features.static', filename='features.css') }}">
 {% endblock %}
 {% block content %}
+{% set labels = {'plan': 'Plan', 'report': 'Report', 'e2e': 'E2E'} %}
 <p class="meta"><a href="{{ url_for('features.index') }}">All features</a></p>
 <h1>{{ feature.title }}</h1>
 <p class="meta"><span>{{ feature.slug }}</span></p>
 <div class="parts">
   {% for part in parts %}
     {% if have[part] %}
-    <a class="part" href="{{ url_for('features.show', slug=feature.slug, tab=part) }}" {% if part == tab %}aria-current="page"{% endif %}>{{ part | capitalize }}</a>
+    <a class="part" href="{{ url_for('features.show', slug=feature.slug, tab=part) }}" {% if part == tab %}aria-current="page"{% endif %}>{{ labels[part] }}</a>
     {% else %}
-    <span class="part missing">{{ part | capitalize }} (none yet)</span>
+    <span class="part missing">{{ labels[part] }} (none yet)</span>
     {% endif %}
   {% endfor %}
   {% if feature.branch %}
@@ -22,6 +23,6 @@
   {% endif %}
 </div>
 {% if have[tab] %}
-<iframe class="part" title="{{ tab | capitalize }}: {{ feature.title }}" src="{{ url_for('features.raw', slug=feature.slug, part=tab) }}"></iframe>
+<iframe class="part" title="{{ labels[tab] }}: {{ feature.title }}" src="{{ url_for('features.raw', slug=feature.slug, part=tab) }}"></iframe>
 {% endif %}
 {% endblock %}

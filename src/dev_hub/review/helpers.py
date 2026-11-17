@@ -1,4 +1,4 @@
-"""The helpers the self-review skill and pr-brief share (~/.claude/lib/review_context.py).
+"""The helpers the local review and pr-brief share (~/.claude/lib/review_context.py).
 
 They know Kraken's layout: which files an end user sees, where the guidance files are, where
 Asana links are. They are loaded when needed and not copied here, so there is one copy to keep up

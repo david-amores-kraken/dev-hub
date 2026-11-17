@@ -1,4 +1,4 @@
-"""Keep the tests away from the real ~/pr-reviews, ~/Plans and ~/Reports."""
+"""Keep the tests away from the real ~/pr-reviews, ~/Plans, ~/Reports, ~/E2E and ~/Reviews."""
 
 from __future__ import annotations
 
@@ -18,10 +18,11 @@ from dev_hub.config import HOST, PORT
 
 
 @pytest.fixture(autouse=True)
-def no_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Point the Diffs section at a repo that isn't there, so no test reads a real one. The
-    `repo` fixture replaces this."""
-    monkeypatch.setenv("DEV_HUB_REPO", str(tmp_path / "no-repo"))
+def no_real_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point every folder the hub reads at one that isn't there, so no test reads my real
+    repo, plans, reports, e2e results or reviews. The fixtures below replace these."""
+    for name in ("REPO", "PLANS", "REPORTS", "E2E", "REVIEWS"):
+        monkeypatch.setenv(f"DEV_HUB_{name}", str(tmp_path / f"no-{name.lower()}"))
 
 
 @pytest.fixture
@@ -41,7 +42,15 @@ def reports(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 
 @pytest.fixture
-def client(plans: Path, reports: Path, reviews: Path) -> FlaskClient:
+def e2e(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    folder = tmp_path / "E2E"
+    folder.mkdir()
+    monkeypatch.setenv("DEV_HUB_E2E", str(folder))
+    return folder
+
+
+@pytest.fixture
+def client(plans: Path, reports: Path, reviews: Path, e2e: Path) -> FlaskClient:
     return create_app().test_client()
 
 
@@ -77,16 +86,15 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 
 @pytest.fixture
 def skills(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    """A stand-in for ~/.claude: the self-review brief and one writing preference file."""
+    """A stand-in for ~/.claude (one writing preference file) and for the review brief."""
     home = tmp_path / "claude"
-    brief = home / "skills" / "self-review" / "reference" / "brief.md"
-    brief.parent.mkdir(parents=True)
+    home.mkdir()
+    brief = tmp_path / "brief.md"
     brief.write_text(
-        "# Self-review brief\n\nRules.\n\n```bash\n"
-        "python3 /Users/x/.claude/skills/self-review/scripts/post.py <run folder> <your persona key>\n"
-        "```\n"
+        "# Local review brief\n\nThis is a review of a local branch.\n\n```bash\n"
+        "{POST_COMMAND} <run folder> <your persona key>\n```\n"
     )
     (home / "comment-preferences.md").write_text("no comments")
     monkeypatch.setattr("dev_hub.review.prepare.CLAUDE", home)
     monkeypatch.setattr("dev_hub.review.prepare.BRIEF", brief)
-    return home
+    return brief

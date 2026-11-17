@@ -1,10 +1,9 @@
 """Gather everything the personas need to review a branch into a run folder.
 
-The folder has the same files the self-review skill makes for a PR (see its reference/brief.md),
-so the personas work unchanged. Differences: there is no PR, so `pr.md` holds the draft title and
-description from the dev hub; the diff is `base...branch` read from git; and earlier findings and
-my comments come from the hub's review file instead of GitHub. `brief.md` is the skill's brief with
-the command that posts findings changed to the local one.
+The folder is what the personas read (see skills/local-review/reference/brief.md): the diff is
+`base...branch` read from git, `pr.md` holds the draft title and description from the dev hub, and
+earlier findings and my comments come from the hub's review file. `brief.md` is the skill's brief
+with the command that posts findings filled in.
 """
 
 from __future__ import annotations
@@ -25,19 +24,13 @@ from dev_hub.diffs.store import list_comments, list_reviews, load_description
 from dev_hub.review.personas import PERSONAS, USER_FACING_PERSONAS
 
 CLAUDE = Path.home() / ".claude"
-BRIEF = CLAUDE / "skills" / "self-review" / "reference" / "brief.md"
+BRIEF = Path(__file__).resolve().parents[3] / "skills" / "local-review" / "reference" / "brief.md"
 PREFERENCES = [
     "comment-preferences.md",
     "commit-message-preferences.md",
     "pr-description-preferences.md",
 ]
-POST_COMMAND_RE = re.compile(r"python3 \S+/post\.py <run folder> <your persona key>")
-LOCAL_NOTE = """\
-> **This is a local review.** The branch has no PR yet. `pr.md` is the draft PR title and
-> description, and "the PR" below means the branch. Your findings become comments in the dev hub,
-> on the "All changes" page, a commit message or the description, and the command at the end of
-> this file puts them there. Everything else in this file applies as written.
-"""
+POST_PLACEHOLDER = "{POST_COMMAND}"
 
 
 def post_command() -> str:
@@ -74,7 +67,7 @@ def prepare(
     stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
     slug = re.sub(r"[^\w.-]+", "-", branch)
     run_dir = (
-        repo_dir() / ".claude" / "local" / "self-review" / f"branch-{slug}" / f"{stamp}-{sha[:7]}"
+        repo_dir() / ".claude" / "local" / "local-review" / f"branch-{slug}" / f"{stamp}-{sha[:7]}"
     )
     run_dir.mkdir(parents=True)
 
@@ -156,13 +149,9 @@ def prepare(
 
 def _brief() -> str:
     text = BRIEF.read_text()
-    if not POST_COMMAND_RE.search(text):
-        raise SystemExit(
-            f"refusing: {BRIEF} no longer has the post.py command that review/prepare.py swaps out"
-        )
-    first, _, rest = text.partition("\n")
-    text = f"{first}\n\n{LOCAL_NOTE}{rest}"
-    return POST_COMMAND_RE.sub(f"{post_command()} <run folder> <your persona key>", text)
+    if POST_PLACEHOLDER not in text:
+        raise SystemExit(f"refusing: {BRIEF} has no {POST_PLACEHOLDER} for the post command")
+    return text.replace(POST_PLACEHOLDER, post_command())
 
 
 def _prior(
