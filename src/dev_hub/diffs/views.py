@@ -18,6 +18,7 @@ from dev_hub.diffs.comments import (
 )
 from dev_hub.diffs.follow import follow
 from dev_hub.diffs.git import Commit, GitError
+from dev_hub.diffs.markdown import render
 from dev_hub.diffs.store import (
     MAX_BODY,
     MAX_TITLE,
@@ -95,6 +96,17 @@ def save(branch: str) -> Reply:
         return jsonify(error="too long"), 400
     save_description(branch, title, body)
     return jsonify(ok=True)
+
+
+@blueprint.post("/<path:branch>/preview")
+def preview(branch: str) -> Reply:
+    """The description as the reviewer will read it. Takes the text as typed, saved or not."""
+    _require_branch(branch)
+    data = request.get_json(silent=True)
+    body = data.get("body") if isinstance(data, dict) else None
+    if not isinstance(body, str) or len(body) > MAX_BODY:
+        return jsonify(error="body must be text"), 400
+    return jsonify(html=render(body))
 
 
 @blueprint.post("/<path:branch>/comments")

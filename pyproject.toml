@@ -3,7 +3,11 @@ name = "dev-hub"
 version = "0.1.0"
 description = "A local web page for my dev work: PR briefs, feature plans, and whatever comes next."
 requires-python = ">=3.12"
-dependencies = ["flask>=3.1", "pr-brief"]
+dependencies = [
+    "flask>=3.1",
+    "markdown-it-py>=4.3.0",
+    "pr-brief",
+]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.14", "ty>=0.0.1a"]

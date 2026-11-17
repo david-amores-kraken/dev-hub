@@ -3,6 +3,36 @@ const form = document.getElementById("description");
 const status = document.getElementById("status");
 const button = form.querySelector("button");
 
+// Write and Preview tabs. The preview shows what is typed, saved or not.
+const write = document.getElementById("tab-write");
+const preview = document.getElementById("tab-preview");
+const box = document.getElementById("body-preview");
+
+function show(previewing) {
+  write.setAttribute("aria-selected", String(!previewing));
+  preview.setAttribute("aria-selected", String(previewing));
+  form.body.hidden = previewing;
+  box.hidden = !previewing;
+}
+
+write.addEventListener("click", () => show(false));
+preview.addEventListener("click", async () => {
+  show(true);
+  box.textContent = "Rendering…";
+  try {
+    const response = await fetch(preview.dataset.url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body: form.body.value }),
+    });
+    // The server escapes raw HTML and drops images, so what comes back is safe to insert.
+    if (response.ok) box.innerHTML = (await response.json()).html || "<p class='muted'>Nothing to preview.</p>";
+    else box.textContent = `Can't preview (${response.status})`;
+  } catch {
+    box.textContent = "Can't preview (can't reach the hub)";
+  }
+});
+
 form.addEventListener("input", () => { status.textContent = "Unsaved changes"; });
 
 form.addEventListener("submit", async event => {

@@ -107,3 +107,49 @@ def test_saving_the_description_keeps_the_comments(reviews: Path) -> None:
     add_comment("feature/x", target, "first")
     save_description("feature/x", "t", "b")
     assert [c["text"] for c in list_comments("feature/x")] == ["first"]
+
+
+def test_preview_renders_markdown_without_saving(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    body = "## Why\n\n- one\n- **two**\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n~~old~~ `code`"
+    status, data = post(client, base_url, "/diffs/feature/x/preview", {"body": body})
+    assert status == 200
+    html = data["html"]
+    for part in (
+        "<h2>Why</h2>",
+        "<li><strong>two</strong></li>",
+        "<table>",
+        "<s>old</s>",
+        "<code>code</code>",
+    ):
+        assert part in html
+    assert not review_file("feature/x").exists()
+
+
+def test_preview_does_not_let_the_description_run_code_or_load_anything(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    body = "<script>alert(1)</script> <img src=x onerror=alert(2)>\n\n[go](javascript:alert(3))\n\n![pic](http://evil.example/p.png)"
+    _, data = post(client, base_url, "/diffs/feature/x/preview", {"body": body})
+    html = data["html"]
+    assert "<script" not in html
+    assert "<img" not in html
+    assert 'href="javascript' not in html
+
+
+@pytest.mark.parametrize("payload", ["text", {}, {"body": 1}, {"body": "x" * 100_001}])
+def test_preview_rejects_bad_payloads(
+    repo: Path, client: FlaskClient, base_url: str, payload: object
+) -> None:
+    status, _ = post(client, base_url, "/diffs/feature/x/preview", payload)
+    assert status == 400
+
+
+def test_preview_needs_the_hubs_own_origin_and_a_real_branch(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    response = client.post("/diffs/feature/x/preview", json={"body": "b"}, base_url=base_url)
+    assert response.status_code == 403
+    status, _ = post(client, base_url, "/diffs/nope/preview", {"body": "b"})
+    assert status == 404
