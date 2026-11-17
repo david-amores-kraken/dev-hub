@@ -1,7 +1,7 @@
 {
   "name": "dev-hub-review-poc",
   "displayName": "Dev Hub review (proof of concept)",
-  "description": "Read a local branch commit by commit in VS Code's diff editor, and comment on lines. Comments are kept in memory only.",
+  "description": "Review a feature in VS Code: its plan, report, e2e results and reviews from the dev hub, then its commits in VS Code's diff editor. Changes to comments are kept in memory only.",
   "version": "0.0.1",
   "publisher": "local",
   "private": true,
@@ -22,7 +22,11 @@
           "type": "string",
           "default": "origin/master",
           "description": "What a branch is compared with, as the hub's DEV_HUB_BASE."
-        }
+        },
+        "devHubReview.plans": { "type": "string", "default": "~/Plans", "description": "Where the feature skill saves plans, as the hub's DEV_HUB_PLANS." },
+        "devHubReview.reports": { "type": "string", "default": "~/Reports", "description": "Where the feature skill saves reports, as the hub's DEV_HUB_REPORTS." },
+        "devHubReview.e2e": { "type": "string", "default": "~/E2E", "description": "Where the e2e-verify skill saves its results, as the hub's DEV_HUB_E2E." },
+        "devHubReview.reviews": { "type": "string", "default": "~/Reviews", "description": "Where the hub keeps comments and PR descriptions, as its DEV_HUB_REVIEWS." }
       }
     },
     "viewsContainers": {
@@ -31,7 +35,7 @@
       ]
     },
     "views": {
-      "devHubReview": [{ "id": "devHubReview.commits", "name": "Branch" }]
+      "devHubReview": [{ "id": "devHubReview.commits", "name": "Feature" }]
     },
     "commands": [
       { "command": "devHubReview.pickBranch", "title": "Pick a branch to review", "category": "Dev Hub", "icon": "$(git-branch)" },
@@ -44,7 +48,11 @@
       { "command": "devHubReview.cancelSaveNote", "title": "Cancel" },
       { "command": "devHubReview.resolveThread", "title": "Resolve", "icon": "$(check)" },
       { "command": "devHubReview.reopenThread", "title": "Reopen", "icon": "$(issue-reopened)" },
-      { "command": "devHubReview.deleteThread", "title": "Delete thread", "icon": "$(trash)" }
+      { "command": "devHubReview.deleteThread", "title": "Delete thread", "icon": "$(trash)" },
+      { "command": "devHubReview.address", "title": "Address", "icon": "$(tools)" },
+      { "command": "devHubReview.dismiss", "title": "Dismiss", "icon": "$(circle-slash)" },
+      { "command": "devHubReview.openPage", "title": "Open page" },
+      { "command": "devHubReview.showComment", "title": "Show comment" }
     ],
     "menus": {
       "view/title": [
@@ -60,16 +68,22 @@
         { "command": "devHubReview.cancelSaveNote", "when": "false" },
         { "command": "devHubReview.resolveThread", "when": "false" },
         { "command": "devHubReview.reopenThread", "when": "false" },
-        { "command": "devHubReview.deleteThread", "when": "false" }
+        { "command": "devHubReview.deleteThread", "when": "false" },
+        { "command": "devHubReview.address", "when": "false" },
+        { "command": "devHubReview.dismiss", "when": "false" },
+        { "command": "devHubReview.openPage", "when": "false" },
+        { "command": "devHubReview.showComment", "when": "false" }
       ],
       "comments/commentThread/context": [
         { "command": "devHubReview.createNote", "group": "inline", "when": "commentController == devhub-review && commentThreadIsEmpty" },
         { "command": "devHubReview.replyNote", "group": "inline", "when": "commentController == devhub-review && !commentThreadIsEmpty" }
       ],
       "comments/commentThread/title": [
-        { "command": "devHubReview.resolveThread", "group": "navigation@1", "when": "commentController == devhub-review && commentThread == unresolved" },
-        { "command": "devHubReview.reopenThread", "group": "navigation@1", "when": "commentController == devhub-review && commentThread == resolved" },
-        { "command": "devHubReview.deleteThread", "group": "navigation@2", "when": "commentController == devhub-review && !commentThreadIsEmpty" }
+        { "command": "devHubReview.address", "group": "navigation@1", "when": "commentController == devhub-review && commentThread =~ /finding/" },
+        { "command": "devHubReview.dismiss", "group": "navigation@2", "when": "commentController == devhub-review && commentThread =~ /finding/" },
+        { "command": "devHubReview.resolveThread", "group": "navigation@3", "when": "commentController == devhub-review && commentThread =~ /^open/" },
+        { "command": "devHubReview.reopenThread", "group": "navigation@3", "when": "commentController == devhub-review && commentThread =~ /^done/" },
+        { "command": "devHubReview.deleteThread", "group": "navigation@4", "when": "commentController == devhub-review && !commentThreadIsEmpty" }
       ],
       "comments/comment/title": [
         { "command": "devHubReview.editNote", "group": "inline@1", "when": "commentController == devhub-review" },

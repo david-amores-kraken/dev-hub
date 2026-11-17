@@ -10,7 +10,7 @@ section per tool:
 | Diffs | `/diffs/` | A branch of kraken-core commit by commit, with a PR title and body to write | `src/dev_hub/diffs` |
 | Plans | `/plans/` | Plans the `feature` skill saved in `~/Plans` | `src/dev_hub/plans` |
 
-`vscode/` is a proof of concept of the Diffs section as a VS Code extension. See its README.
+`vscode/` is a proof of concept of the Features and Diffs sections as a VS Code extension. See its README.
 
 ## How it fits together
 
