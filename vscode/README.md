@@ -1,62 +1,74 @@
-# Dev Hub review in VS Code (proof of concept)
+# Dev Hub review for VS Code
 
-A look at what reviewing a feature could be like in VS Code, instead of the hub's Features and
-Diffs sections. It reads the hub's folders (`~/Plans`, `~/Reports`, `~/E2E`, `~/Reviews`) and the
-repo, and never writes to them. The hub's comments are loaded into VS Code, but replies,
-resolving, triage and new comments are kept in memory only, so they are lost when the window
-reloads.
+Review a feature in VS Code instead of the browser: its plan, report and e2e results, the persona
+reviews, and its commits in VS Code's diff editor, with comments on the lines.
+
+The extension is a client of the dev hub. The hub works everything out and keeps everything
+(`/api` in `src/dev_hub/api`), so the extension and the hub's pages always show the same thing.
+A comment made, answered, resolved or triaged in one shows up in the other. The hub must be
+running.
+
+## What it shows
 
 The **Dev Hub review** icon in the activity bar shows three groups for the branch:
 
-- **The feature**, under its title: the plan, report and e2e results the skills saved, and the PR
-  description. Plan, report and e2e results are HTML, so they open in a webview. As in the hub,
-  they get no scripts and no network. They can't take comments, because VS Code's Comments API
-  only works in text editors. The PR description opens as text and can take comments.
-- **Reviews**: the comments on the branch, grouped by the persona that wrote them, then yours.
-  A persona's tooltip is its review summary. Clicking a comment opens its diff at its lines.
-- **Changes**: "All changes", then each commit with its message and changed files, as the hub
-  does (`base..branch`).
+- **The feature**, under its plan's title: the plan, report and e2e results, the PR description,
+  and a link to the feature in the hub. The plan, report and e2e results are HTML, so they open in
+  a webview, with the hub's sandbox (no scripts, no network). They can't take comments, because
+  VS Code's comments only work in text editors.
+- **Reviews**: the comments, grouped by the persona that wrote them (latest review first), then
+  yours. A persona's tooltip is its review summary. Clicking a comment opens it on its lines.
+- **Changes**: "All changes", then each commit with its message and files, with the number of open
+  comments on each, as in the hub.
 
 Comments:
 
-- Clicking a file opens it in VS Code's diff editor, with syntax highlighting.
-- Each hub comment shows as a thread on its lines, with the persona as author and the agent's
-  replies under it. If its lines have changed, it moves to where its quoted text is now, or stays
-  put and says "lines changed since". A comment on a commit that is no longer on the branch can't
-  be placed, and is only listed under Reviews.
-- A finding has **Address** and **Dismiss** buttons, as in the hub. Any thread can be resolved
-  or reopened.
-- Hover a line number and click **+** to comment on it, or select lines first to comment on a
-  range. This works in diffs, commit messages and the PR description. The Comments panel lists
-  every thread.
+- A comment is shown on the pages the hub shows it on. A comment on a commit's lines is also on
+  "All changes" if those lines are still there, and the other way round, as in the hub.
+- A comment whose commit or lines have changed can't be shown on the code. It is listed under
+  Reviews with a warning icon, and the hub's Overview shows it with its quote.
+- Lines take comments where the hub's diff pages offer them: lines in the diff, with removed
+  lines on the left. A commit message and the PR description take them on any line.
+- Findings have **Address** and **Dismiss** buttons. Any thread can be resolved or reopened. Your
+  comments and replies can be edited and deleted; a finding is answered with a reply, not edited.
 
-## Try it
+It reads the hub again when you come back to the window, after each change, and on **Refresh**.
+Open plan, report and e2e pages are read again only on Refresh, because e2e pages can be large.
 
-There is no build step. To look around, open a window with the extension loaded:
-
-```bash
-code --extensionDevelopmentPath="$HOME/Code/dev-hub/vscode" ~/Code/kraken-core
-```
-
-Then pick a branch with the branch button at the top of the view.
-
-A `vscode://` link only reaches installed extensions, not one loaded as above. To try the
-pop-up, package and install it (`code --uninstall-extension local.dev-hub-review-poc` removes it):
+## Install
 
 ```bash
-npx @vscode/vsce@3.2.1 package --allow-missing-repository --skip-license -o /tmp/dev-hub-review-poc.vsix
-code --install-extension /tmp/dev-hub-review-poc.vsix
+cd vscode
+npm ci
+npm run install-extension
 ```
 
-Then, to see how a feature could pop up on its own when it's ready for review, open a link like
-this one from a terminal. VS Code may ask once whether the extension can open it:
+That packages `dev-hub-review.vsix` and installs it. Reload any open VS Code window to use the
+new version. If the old proof of concept is installed, remove it:
+`code --uninstall-extension local.dev-hub-review-poc`.
+
+`devHubReview.hubUrl` is the hub's address (default `http://127.0.0.1:8765`).
+
+## Open a branch from outside
+
+The hub's diff and feature pages have an **Open in VS Code** link. It opens a link like this one,
+which shows the branch and opens the first file of its first commit:
 
 ```bash
-open "vscode://local.dev-hub-review-poc/open?branch=debt/credit-checking/domestic-data-request-endpoint"
+open "vscode://local.dev-hub-review/open?branch=debt/credit-checking/domestic-data-request-endpoint"
 ```
 
-It shows that branch and opens the first file of its first commit.
+VS Code may ask once whether the extension can open it.
 
-The settings match the hub's environment variables: `devHubReview.repo` (default
-`~/Code/kraken-core`), `devHubReview.base` (default `origin/master`), and `devHubReview.plans`,
-`.reports`, `.e2e` and `.reviews` for the hub's folders.
+## Develop
+
+Plain JavaScript with type comments, so there is no build step. `src/model.js` has what can be
+worked out without VS Code, and its tests. The rest is thin: `hub.js` talks to the hub,
+`review.js` keeps what it last said, and `tree.js`, `comments.js`, `documents.js` and `pages.js`
+show it.
+
+```bash
+npm run check   # type-check
+npm test        # unit tests
+code --extensionDevelopmentPath="$PWD" ~/Code/kraken-core   # try it without installing
+```

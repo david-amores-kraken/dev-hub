@@ -1,32 +1,35 @@
 {
-  "name": "dev-hub-review-poc",
-  "displayName": "Dev Hub review (proof of concept)",
-  "description": "Review a feature in VS Code: its plan, report, e2e results and reviews from the dev hub, then its commits in VS Code's diff editor. Changes to comments are kept in memory only.",
-  "version": "0.0.1",
+  "name": "dev-hub-review",
+  "displayName": "Dev Hub review",
+  "description": "Review a feature from the dev hub: its plan, report and e2e results, the persona reviews, and its commits in VS Code's diff editor.",
+  "version": "0.1.0",
   "publisher": "local",
   "private": true,
   "license": "UNLICENSED",
   "engines": { "vscode": "^1.90.0" },
   "main": "./extension.js",
   "activationEvents": ["onUri"],
+  "scripts": {
+    "check": "tsc -p .",
+    "test": "node --test test/",
+    "package": "vsce package --allow-missing-repository --skip-license -o dev-hub-review.vsix",
+    "install-extension": "npm run package && code --install-extension dev-hub-review.vsix --force"
+  },
+  "devDependencies": {
+    "@types/node": "20.12.7",
+    "@types/vscode": "1.90.0",
+    "@vscode/vsce": "3.2.1",
+    "typescript": "5.4.5"
+  },
   "contributes": {
     "configuration": {
       "title": "Dev Hub review",
       "properties": {
-        "devHubReview.repo": {
+        "devHubReview.hubUrl": {
           "type": "string",
-          "default": "~/Code/kraken-core",
-          "description": "The repo whose branches are reviewed."
-        },
-        "devHubReview.base": {
-          "type": "string",
-          "default": "origin/master",
-          "description": "What a branch is compared with, as the hub's DEV_HUB_BASE."
-        },
-        "devHubReview.plans": { "type": "string", "default": "~/Plans", "description": "Where the feature skill saves plans, as the hub's DEV_HUB_PLANS." },
-        "devHubReview.reports": { "type": "string", "default": "~/Reports", "description": "Where the feature skill saves reports, as the hub's DEV_HUB_REPORTS." },
-        "devHubReview.e2e": { "type": "string", "default": "~/E2E", "description": "Where the e2e-verify skill saves its results, as the hub's DEV_HUB_E2E." },
-        "devHubReview.reviews": { "type": "string", "default": "~/Reviews", "description": "Where the hub keeps comments and PR descriptions, as its DEV_HUB_REVIEWS." }
+          "default": "http://127.0.0.1:8765",
+          "description": "Where the dev hub is running. It does the work and keeps the comments."
+        }
       }
     },
     "viewsContainers": {
@@ -35,11 +38,14 @@
       ]
     },
     "views": {
-      "devHubReview": [{ "id": "devHubReview.commits", "name": "Feature" }]
+      "devHubReview": [{ "id": "devHubReview.feature", "name": "Feature" }]
     },
     "commands": [
       { "command": "devHubReview.pickBranch", "title": "Pick a branch to review", "category": "Dev Hub", "icon": "$(git-branch)" },
       { "command": "devHubReview.refresh", "title": "Refresh", "category": "Dev Hub", "icon": "$(refresh)" },
+      { "command": "devHubReview.openInHub", "title": "Open in the dev hub", "category": "Dev Hub", "icon": "$(link-external)" },
+      { "command": "devHubReview.openPage", "title": "Open page" },
+      { "command": "devHubReview.showComment", "title": "Show comment" },
       { "command": "devHubReview.createNote", "title": "Add comment" },
       { "command": "devHubReview.replyNote", "title": "Reply" },
       { "command": "devHubReview.editNote", "title": "Edit", "icon": "$(edit)" },
@@ -48,18 +54,18 @@
       { "command": "devHubReview.cancelSaveNote", "title": "Cancel" },
       { "command": "devHubReview.resolveThread", "title": "Resolve", "icon": "$(check)" },
       { "command": "devHubReview.reopenThread", "title": "Reopen", "icon": "$(issue-reopened)" },
-      { "command": "devHubReview.deleteThread", "title": "Delete thread", "icon": "$(trash)" },
       { "command": "devHubReview.address", "title": "Address", "icon": "$(tools)" },
-      { "command": "devHubReview.dismiss", "title": "Dismiss", "icon": "$(circle-slash)" },
-      { "command": "devHubReview.openPage", "title": "Open page" },
-      { "command": "devHubReview.showComment", "title": "Show comment" }
+      { "command": "devHubReview.dismiss", "title": "Dismiss", "icon": "$(circle-slash)" }
     ],
     "menus": {
       "view/title": [
-        { "command": "devHubReview.pickBranch", "when": "view == devHubReview.commits", "group": "navigation@1" },
-        { "command": "devHubReview.refresh", "when": "view == devHubReview.commits", "group": "navigation@2" }
+        { "command": "devHubReview.pickBranch", "when": "view == devHubReview.feature", "group": "navigation@1" },
+        { "command": "devHubReview.refresh", "when": "view == devHubReview.feature", "group": "navigation@2" },
+        { "command": "devHubReview.openInHub", "when": "view == devHubReview.feature", "group": "navigation@3" }
       ],
       "commandPalette": [
+        { "command": "devHubReview.openPage", "when": "false" },
+        { "command": "devHubReview.showComment", "when": "false" },
         { "command": "devHubReview.createNote", "when": "false" },
         { "command": "devHubReview.replyNote", "when": "false" },
         { "command": "devHubReview.editNote", "when": "false" },
@@ -68,11 +74,8 @@
         { "command": "devHubReview.cancelSaveNote", "when": "false" },
         { "command": "devHubReview.resolveThread", "when": "false" },
         { "command": "devHubReview.reopenThread", "when": "false" },
-        { "command": "devHubReview.deleteThread", "when": "false" },
         { "command": "devHubReview.address", "when": "false" },
-        { "command": "devHubReview.dismiss", "when": "false" },
-        { "command": "devHubReview.openPage", "when": "false" },
-        { "command": "devHubReview.showComment", "when": "false" }
+        { "command": "devHubReview.dismiss", "when": "false" }
       ],
       "comments/commentThread/context": [
         { "command": "devHubReview.createNote", "group": "inline", "when": "commentController == devhub-review && commentThreadIsEmpty" },
@@ -82,12 +85,11 @@
         { "command": "devHubReview.address", "group": "navigation@1", "when": "commentController == devhub-review && commentThread =~ /finding/" },
         { "command": "devHubReview.dismiss", "group": "navigation@2", "when": "commentController == devhub-review && commentThread =~ /finding/" },
         { "command": "devHubReview.resolveThread", "group": "navigation@3", "when": "commentController == devhub-review && commentThread =~ /^open/" },
-        { "command": "devHubReview.reopenThread", "group": "navigation@3", "when": "commentController == devhub-review && commentThread =~ /^done/" },
-        { "command": "devHubReview.deleteThread", "group": "navigation@4", "when": "commentController == devhub-review && !commentThreadIsEmpty" }
+        { "command": "devHubReview.reopenThread", "group": "navigation@3", "when": "commentController == devhub-review && commentThread =~ /^resolved/" }
       ],
       "comments/comment/title": [
-        { "command": "devHubReview.editNote", "group": "inline@1", "when": "commentController == devhub-review" },
-        { "command": "devHubReview.deleteNote", "group": "inline@2", "when": "commentController == devhub-review" }
+        { "command": "devHubReview.editNote", "group": "inline@1", "when": "commentController == devhub-review && comment =~ /^(mine|reply-mine)$/" },
+        { "command": "devHubReview.deleteNote", "group": "inline@2", "when": "commentController == devhub-review && comment =~ /^(mine|finding|reply-mine)$/" }
       ],
       "comments/comment/context": [
         { "command": "devHubReview.cancelSaveNote", "group": "inline@1", "when": "commentController == devhub-review" },
