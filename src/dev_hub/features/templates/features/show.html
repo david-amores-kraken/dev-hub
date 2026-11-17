@@ -4,10 +4,9 @@
 <link rel="stylesheet" href="{{ url_for('features.static', filename='features.css') }}">
 {% endblock %}
 {% block content %}
-{% set labels = {'plan': 'Plan', 'report': 'Report', 'e2e': 'E2E'} %}
 <p class="meta"><a href="{{ url_for('features.index') }}">All features</a></p>
 <h1>{{ feature.title }}</h1>
-<p class="meta"><span>{{ feature.slug }}</span></p>
+<p class="meta"><span>{{ feature.slug }}</span>{% if feature.branch %} · <a href="{{ vscode_link(feature.branch) }}">Open in VS Code</a>{% endif %}</p>
 <div class="parts">
   {% for part in parts %}
     {% if have[part] %}

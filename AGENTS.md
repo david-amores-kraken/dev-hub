@@ -21,3 +21,9 @@ How to work in this repo. For what the hub is and how it fits together, see `REA
 ```bash
 uv run ruff check . && uv run ruff format --check . && uv run ty check && uv run pytest
 ```
+
+If you changed `vscode/`, also run its checks:
+
+```bash
+cd vscode && npm ci && npm run check && npm test
+```
