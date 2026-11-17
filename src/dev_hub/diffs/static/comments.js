@@ -4,6 +4,10 @@
 // A "surface" is anything with numbered lines: one file of a diff drawn by diff2html, a commit
 // message, or the PR description. Each row of a surface is { el, gutter, oldNo, newNo, text }.
 // Removed lines only have an oldNo, added lines only a newNo, unchanged lines have both.
+//
+// A comment on a diff line may also be shown on the other page with those lines (a commit's page,
+// or "All changes"). There it has a `mirror` link to where it was made, and its target is where
+// it is on this page. On the overview, each review lists its findings in slots (`data-comment`).
 
 const review = document.getElementById("review");
 if (review) start(review);
@@ -12,8 +16,9 @@ function start(review) {
   const base = review.dataset.base; // POST here to add; /<id> to change; /<id>/delete to remove
   const commit = review.dataset.commit || null; // null on the overview and the "All changes" page
   const unplaced = document.getElementById("unplaced");
-  const editing = new Set(); // ids of the comments being edited
+  const editing = new Set(); // "<where>:<id>" of the comments being edited
   let comments = JSON.parse(document.getElementById("comments").textContent);
+  let pinned = JSON.parse(document.getElementById("review-comments")?.textContent ?? "[]");
   let surfaces = [];
   let selection = null; // { surface, anchor, to, side }
   let composer = null;
@@ -223,10 +228,14 @@ function start(review) {
     list.replaceChildren();
     for (const comment of comments) {
       const row = findRow(comment.target);
-      if (row) holder(row).append(card(comment, false));
-      else list.append(card(comment, true));
+      if (row) holder(row).append(card(comment, false, "line"));
+      else if (!comment.mirror) list.append(card(comment, true, "line"));
     }
     unplaced.hidden = !list.children.length;
+    document.querySelectorAll("[data-comment]").forEach(slot => {
+      const comment = pinned.find(c => c.id === slot.dataset.comment);
+      slot.replaceChildren(...(comment ? [card(comment, false, "review")] : []));
+    });
   }
 
   // The row a comment sits under: the last line of its range. The lines on the page must still
@@ -266,7 +275,8 @@ function start(review) {
     return `${where} · ${lines}${target.side === "old" ? " (removed)" : ""}`;
   }
 
-  function card(comment, showWhere) {
+  function card(comment, showWhere, where) {
+    const key = `${where}:${comment.id}`;
     const el = document.createElement("div");
     const dismissed = comment.triage === "dismiss";
     el.className = "comment" + (comment.status === "resolved" ? " resolved" : "") + (dismissed ? " dismissed" : "");
@@ -280,18 +290,25 @@ function start(review) {
     head.textContent = [who, commitName, showWhere ? describe(comment.target) : null, when, state]
       .filter(Boolean).join(" · ");
     el.append(head);
+    if (comment.mirror) {
+      const from = document.createElement("div");
+      from.className = "meta mirror";
+      const link = Object.assign(document.createElement("a"), { href: comment.mirror.url, textContent: comment.mirror.label });
+      from.append("Made on ", link);
+      el.append(from);
+    }
     if (showWhere) {
       const quote = document.createElement("pre");
       quote.className = "quote";
       quote.textContent = comment.target.quote;
       el.append(quote);
     }
-    if (editing.has(comment.id)) {
+    if (editing.has(key)) {
       const { box, textarea } = editor("Save", "Cancel", async text => {
         replace(await post(`${base}/${comment.id}`, { text }));
-        editing.delete(comment.id);
+        editing.delete(key);
         render();
-      }, () => { editing.delete(comment.id); render(); }, comment.text);
+      }, () => { editing.delete(key); render(); }, comment.text);
       el.append(box);
       queueMicrotask(() => textarea.focus());
       return el;
@@ -325,12 +342,13 @@ function start(review) {
       replace(await post(`${base}/${comment.id}`, { status: comment.status === "open" ? "resolved" : "open" }));
     }));
     const edit = button("Edit", "plain");
-    edit.addEventListener("click", () => { editing.add(comment.id); render(); });
+    edit.addEventListener("click", () => { editing.add(key); render(); });
     const remove = button("Delete", "plain");
     remove.addEventListener("click", () => act(async () => {
       if (!confirm("Delete this comment?")) return;
       await post(`${base}/${comment.id}/delete`, {});
       comments = comments.filter(c => c.id !== comment.id);
+      pinned = pinned.filter(c => c.id !== comment.id);
     }));
     actions.append(resolve, edit, remove);
     el.append(actions);
@@ -347,8 +365,12 @@ function start(review) {
     return text;
   }
 
+  // The server sends a comment as saved: on its own page. A copy shown elsewhere keeps where it
+  // is shown.
   function replace(updated) {
-    comments = comments.map(c => (c.id === updated.id ? updated : c));
+    const keep = c => (c.id === updated.id ? { ...updated, target: c.target, ...(c.mirror ? { mirror: c.mirror } : {}) } : c);
+    comments = comments.map(keep);
+    pinned = pinned.map(keep);
   }
 
   async function act(change) {

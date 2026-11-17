@@ -26,6 +26,30 @@
     <summary>{{ r.emoji }} {{ r.name }} <span class="pill">{{ 'LGTM' if r.verdict == 'lgtm' else r.findings | length ~ ' finding' ~ ('' if r.findings | length == 1 else 's') }}</span> <span class="meta">{{ r.created[:16].replace('T', ' ') }} · {{ r.sha[:7] }}</span></summary>
     <p>{{ r.summary }}</p>
     {% if r.resolved %}<p class="meta">Resolved since the last review: {{ r.resolved | join(', ') }}</p>{% endif %}
+    {% for item in findings.get(r.id, []) %}
+    {% set t = item.comment.target %}
+    <div class="finding">
+      <div class="finding-head">
+        <a href="{{ item.url }}">{{ t.file if t.kind == 'line' else 'Description' if t.kind == 'pr_body' else 'Commit message' }}</a>
+        {% if t.kind == 'message' and t.subject %}<span class="meta">“{{ t.subject }}”</span>{% endif %}
+        {% if t.kind == 'line' and item.rows is none %}<span class="pill">Outdated</span>{% endif %}
+      </div>
+      {% if item.rows %}
+      <table class="snippet">
+        {% for row in item.rows %}
+        <tr class="{{ row.change }}{{ ' chosen' if row.chosen }}"><td class="num">{{ row.old or '' }}</td><td class="num">{{ row.new or '' }}</td><td class="sign">{{ '-' if row.change == 'del' else '+' if row.change == 'add' else ' ' }}</td><td class="code">{{ row.text }}</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <table class="snippet">
+        {% for text in t.quote.split('\n') %}
+        <tr class="chosen"><td class="num">{{ t.start + loop.index0 }}</td><td class="code">{{ text }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+      <div class="comments" data-comment="{{ item.comment.id }}"></div>
+    </div>
+    {% endfor %}
     {% if r.unplaced %}
     <p class="meta">Not on any line:</p>
     <ul>
@@ -58,5 +82,6 @@
 {% endif %}
 {% endblock %}
 {% block page_scripts %}
+<script type="application/json" id="review-comments">{{ review_comments | tojson }}</script>
 <script src="{{ url_for('diffs.static', filename='description.js') }}"></script>
 {% endblock %}
