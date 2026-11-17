@@ -94,6 +94,10 @@ the folder and take the findings:
 - A persona's finding is only acted on if I click **Address** on it. **Dismiss** hides it. My own
   comments are always acted on. `todo` lists both, and `address` records the agent's reply and
   resolves the comment.
+- Any comment can be replied to. A finding can't be edited, only replied to, so its text stays the
+  persona's. My reply reopens the comment and marks a finding **Address** (unless it is
+  dismissed), so the next `todo` lists it with the reply marked `from: me`. Personas see my
+  replies to their findings on the next review.
 - `pr set` is how an agent writes the PR title and description that the Overview box shows. A part
   that is left out stays as it was.
 - A feature page links to its branch's diff (the Diff link), and the diff links back.

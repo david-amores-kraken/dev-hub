@@ -97,3 +97,19 @@ def test_the_commands_work_from_the_command_line(
     assert json.loads(run("todo", "feature/x"))["items"][0]["id"] == mine["id"]
     run("address", "feature/x", mine["id"], "--reply", "Done.", "--as", "TARS")
     assert json.loads(run("todo", "feature/x"))["items"] == []
+
+
+def test_my_reply_to_a_finding_puts_it_on_the_list_with_the_reply_marked_as_mine(
+    repo: Path, reviews: Path
+) -> None:
+    from dev_hub.diffs.store import add_my_reply
+
+    asked = finding("use a set", "TS-1")
+    address("feature/x", asked["id"], "Used a set.", "abc1234", "TARS")
+    assert todo("feature/x")["items"] == []
+    add_my_reply("feature/x", asked["id"], "A frozenset, please.")
+    [item] = todo("feature/x")["items"]
+    assert [(r["from"], r["text"]) for r in item["replies"]] == [
+        ("TARS", "Used a set."),
+        ("me", "A frozenset, please."),
+    ]

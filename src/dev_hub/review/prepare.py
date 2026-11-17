@@ -20,7 +20,7 @@ from typing import Any
 
 from dev_hub.config import HOST, PORT, base_ref, repo_dir
 from dev_hub.diffs import git
-from dev_hub.diffs.store import list_comments, list_reviews, load_description
+from dev_hub.diffs.store import ME, list_comments, list_reviews, load_description
 from dev_hub.review.personas import PERSONAS, USER_FACING_PERSONAS
 
 CLAUDE = Path.home() / ".claude"
@@ -163,6 +163,7 @@ def _prior(
         if not comment.get("finding_id"):
             continue
         triage = comment.get("triage")
+        replies = comment.get("replies", [])
         status = {"address": "endorsed", "dismiss": "rejected"}.get(triage, "pending")
         findings.append(
             {
@@ -171,8 +172,9 @@ def _prior(
                 "where": describe(comment["target"]),
                 "text": comment["text"],
                 "status": status,
-                "addressed": bool(comment.get("replies")) or comment["status"] == "resolved",
-                "user_replies": [],
+                "addressed": comment["status"] == "resolved"
+                or any(r.get("author") != ME for r in replies),
+                "user_replies": [r["text"] for r in replies if r.get("author") == ME],
             }
         )
     return {

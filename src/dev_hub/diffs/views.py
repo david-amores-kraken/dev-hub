@@ -26,6 +26,8 @@ from dev_hub.diffs.store import (
     MAX_BODY,
     MAX_TITLE,
     add_comment,
+    add_my_reply,
+    change_my_reply,
     delete_comment,
     list_reviews,
     load_description,
@@ -170,6 +172,43 @@ def change_comment(branch: str, comment_id: str) -> Reply:
     comment = update_comment(branch, comment_id, text=text, status=status)
     if comment is not None and "triage" in data:
         comment = set_triage(branch, comment_id, data["triage"])
+    if comment is None:
+        abort(404)
+    return jsonify(_shown(comment))
+
+
+@blueprint.post("/<path:branch>/comments/<comment_id>/replies")
+def reply(branch: str, comment_id: str) -> Reply:
+    _require_branch(branch)
+    data = request.get_json(silent=True)
+    text = data.get("text") if isinstance(data, dict) else None
+    if not is_valid_text(text):
+        return jsonify(error="the reply is empty or too long"), 400
+    assert isinstance(text, str)
+    comment = add_my_reply(branch, comment_id, text)
+    if comment is None:
+        abort(404)
+    return jsonify(_shown(comment))
+
+
+@blueprint.post("/<path:branch>/comments/<comment_id>/replies/<reply_id>")
+def change_reply(branch: str, comment_id: str, reply_id: str) -> Reply:
+    _require_branch(branch)
+    data = request.get_json(silent=True)
+    text = data.get("text") if isinstance(data, dict) else None
+    if not is_valid_text(text):
+        return jsonify(error="the reply is empty or too long"), 400
+    assert isinstance(text, str)
+    comment = change_my_reply(branch, comment_id, reply_id, text)
+    if comment is None:
+        abort(404)
+    return jsonify(_shown(comment))
+
+
+@blueprint.post("/<path:branch>/comments/<comment_id>/replies/<reply_id>/delete")
+def remove_reply(branch: str, comment_id: str, reply_id: str) -> Reply:
+    _require_branch(branch)
+    comment = change_my_reply(branch, comment_id, reply_id, None)
     if comment is None:
         abort(404)
     return jsonify(_shown(comment))

@@ -89,7 +89,8 @@ they finish. When they do, relay one line per persona: LGTM or N findings.
 
 - On a diff line: a comment on the "All changes" page. On "PR description" or "commit <sha>": a
   comment on that text. With no place: it stays in the persona's review on the overview.
-- The user marks a finding **Address** to have it acted on, or **Dismiss** to hide it.
+- The user marks a finding **Address** to have it acted on, or **Dismiss** to hide it. Replying to
+  a finding marks it **Address**. The user replies to a finding instead of editing it.
 - On a re-run, personas don't repeat open findings, never re-raise dismissed ones, and list the
   ones they see fixed as resolved.
 
@@ -114,7 +115,11 @@ PY -m dev_hub.review todo <branch>
 
 It prints the open comments to act on as JSON: the ones the user wrote, and persona findings they
 marked **Address**. Findings they haven't marked, or marked **Dismiss**, are not to be touched.
-Each item has its `id`, where it is, the lines and quote it is about, the text, and any replies.
+Each item has its `id`, where it is, the lines and quote it is about, the text, and any replies,
+oldest first. A reply `from` "me" is the user's: it answers the comment or the agent's last reply,
+and where it differs from the comment, the user's latest reply wins. If it asks a question, answer
+it in your `--reply` (with no commit if nothing changed). Replying reopens a resolved comment and
+marks a finding **Address**, so a comment you dealt with before can be back on the list.
 Work through them as the `feature` skill's Phase 2 does, one commit per comment. After each commit:
 
 ```bash
