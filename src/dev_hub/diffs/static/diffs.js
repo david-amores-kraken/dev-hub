@@ -18,6 +18,43 @@ const ui = new Diff2HtmlUI(document.getElementById("diff"), patch, {
 });
 ui.draw();
 highlight(ui.hljs);
+addCopyButtons();
+
+// A button after each file's path, in the list of files and in each file's header, that copies
+// the path. For a renamed file it copies the new path.
+function addCopyButtons() {
+  const copyIcon = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 0 1 0 1.5h-1.5a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-1.5a.75.75 0 0 1 1.5 0v1.5A1.75 1.75 0 0 1 9.25 16h-7.5A1.75 1.75 0 0 1 0 14.25Z"/><path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0 1 14.25 11h-7.5A1.75 1.75 0 0 1 5 9.25Zm1.75-.25a.25.25 0 0 0-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 0 0 .25-.25v-7.5a.25.25 0 0 0-.25-.25Z"/></svg>';
+  const doneIcon = '<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M13.78 4.22a.75.75 0 0 1 0 1.06l-7.25 7.25a.75.75 0 0 1-1.06 0L2.22 9.28a.75.75 0 0 1 1.06-1.06L6 10.94l6.72-6.72a.75.75 0 0 1 1.06 0Z"/></svg>';
+  document.querySelectorAll("#diff .d2h-file-name").forEach(name => {
+    const path = newPath(name.textContent.trim());
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "copy-path";
+    button.title = `Copy ${path}`;
+    button.setAttribute("aria-label", `Copy path ${path}`);
+    button.innerHTML = copyIcon;
+    button.addEventListener("click", async event => {
+      event.preventDefault();
+      event.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(path);
+        button.innerHTML = doneIcon;
+        button.title = "Copied";
+      } catch {
+        button.title = "Couldn't copy";
+      }
+      setTimeout(() => { button.innerHTML = copyIcon; button.title = `Copy ${path}`; }, 1500);
+    });
+    name.after(button);
+  });
+}
+
+// diff2html names a renamed file "old → new", or "dir/{old → new}/rest" when the paths share
+// a start or an end. Give the new path.
+function newPath(name) {
+  const braced = name.replace(/\{[^{}]* → ([^{}]*)\}/, "$1").replace(/\/\/+/g, "/");
+  return braced.split(" → ").at(-1);
+}
 
 function highlight(hljs) {
   const wrappers = document.querySelectorAll("#diff .d2h-file-wrapper");
