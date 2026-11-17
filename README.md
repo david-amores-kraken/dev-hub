@@ -46,6 +46,9 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
 - Nothing is checked out. Branches and commits are read from the refs.
 - The overview has a title and description box for the PR. It saves to `~/Reviews/<branch>.json`
   (`DEV_HUB_REVIEWS` changes the folder; `/` in the branch name is written as `%2F`).
+  The body box has a Write and a Preview tab. Preview renders the text as typed (saved or not)
+  with markdown-it, like GitHub does: `<details>` and a few other plain tags work, emoji shortcodes
+  (`:rocket:`) become emoji, any other HTML is shown as text, and images are not loaded.
 - Click a line number to comment on a line, and shift-click a second one for a range. This works
   in diffs, commit messages and the saved PR description. A comment is saved at once (there is no
   review to submit), and can be edited, resolved or deleted. Comments live in the same review file

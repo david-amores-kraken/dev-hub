@@ -5,8 +5,13 @@
 <form class="description" id="description" action="{{ url_for('diffs.save', branch=branch) }}">
   <label for="title">Title</label>
   <input type="text" id="title" name="title" maxlength="{{ max_title }}" value="{{ description.title }}" placeholder="One line that says what the PR does">
-  <label for="body">Description</label>
+  <div class="tabs" role="tablist">
+    <label for="body">Description</label>
+    <button type="button" role="tab" id="tab-write" aria-selected="true">Write</button>
+    <button type="button" role="tab" id="tab-preview" aria-selected="false" data-url="{{ url_for('diffs.preview', branch=branch) }}">Preview</button>
+  </div>
   <textarea id="body" name="body" rows="14" maxlength="{{ max_body }}" placeholder="What changed, why, and what to look at first">{{ description.body }}</textarea>
+  <div class="md-preview" id="body-preview" hidden></div>
   <div class="controls">
     <button class="act" type="submit">Save</button>
     <span class="meta" id="status" role="status"></span>
