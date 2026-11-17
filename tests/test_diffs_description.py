@@ -153,3 +153,12 @@ def test_preview_needs_the_hubs_own_origin_and_a_real_branch(
     assert response.status_code == 403
     status, _ = post(client, base_url, "/diffs/nope/preview", {"body": "b"})
     assert status == 404
+
+
+def test_preview_box_class_cant_clash_with_the_diff_highlighter(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    # diff2html puts the language name on every code line, so a .md file's lines get the class
+    # "markdown". Styling that class boxed each line of a .md diff.
+    css = client.get("/diffs/static/diffs.css", base_url=base_url).get_data(as_text=True)
+    assert ".markdown" not in css

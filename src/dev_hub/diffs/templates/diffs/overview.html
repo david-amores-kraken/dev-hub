@@ -11,7 +11,7 @@
     <button type="button" role="tab" id="tab-preview" aria-selected="false" data-url="{{ url_for('diffs.preview', branch=branch) }}">Preview</button>
   </div>
   <textarea id="body" name="body" rows="14" maxlength="{{ max_body }}" placeholder="What changed, why, and what to look at first">{{ description.body }}</textarea>
-  <div class="markdown" id="body-preview" hidden></div>
+  <div class="md-preview" id="body-preview" hidden></div>
   <div class="controls">
     <button class="act" type="submit">Save</button>
     <span class="meta" id="status" role="status"></span>

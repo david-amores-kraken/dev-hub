@@ -31,13 +31,13 @@ form.description textarea { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, 
 .tabs label { margin-right: auto; }
 .tabs button { font: inherit; font-size: 13px; padding: 2px 10px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
 .tabs button[aria-selected="true"] { background: var(--surface); color: var(--text); font-weight: 600; }
-.markdown { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 8px 14px; min-height: 12em; overflow-wrap: anywhere; }
-.markdown[hidden] { display: none; }
-.markdown > :first-child { margin-top: 0; }
-.markdown > :last-child { margin-bottom: 0; }
-.markdown h1, .markdown h2, .markdown h3 { font-size: 16px; margin: 16px 0 6px; padding: 0; border: 0; }
-.markdown blockquote { margin: 8px 0; padding: 0 12px; color: var(--muted); border-left: 3px solid var(--line); }
-.markdown hr { border: 0; border-top: 1px solid var(--line); }
+.md-preview { border: 1px solid var(--line); border-radius: 6px; background: var(--surface); padding: 8px 14px; min-height: 12em; overflow-wrap: anywhere; }
+.md-preview[hidden] { display: none; }
+.md-preview > :first-child { margin-top: 0; }
+.md-preview > :last-child { margin-bottom: 0; }
+.md-preview h1, .md-preview h2, .md-preview h3 { font-size: 16px; margin: 16px 0 6px; padding: 0; border: 0; }
+.md-preview blockquote { margin: 8px 0; padding: 0 12px; color: var(--muted); border-left: 3px solid var(--line); }
+.md-preview hr { border: 0; border-top: 1px solid var(--line); }
 
 /* Comments */
 .pill.open { margin-left: 6px; color: var(--accent); border-color: var(--accent); }
