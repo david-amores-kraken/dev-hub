@@ -68,7 +68,15 @@ def changes(branch: str) -> str:
     commits = _commits(branch)
     patch = git.branch_patch(branch)
     comments = follow(branch, commits, patch=patch)
-    return _page("diffs/patch.html", branch, commits, comments, page="changes", patch=patch)
+    return _page(
+        "diffs/patch.html",
+        branch,
+        commits,
+        comments,
+        page="changes",
+        patch=patch,
+        versions=_versions(patch),
+    )
 
 
 @blueprint.get("/<path:branch>/commits/<sha>")
@@ -80,7 +88,14 @@ def show_commit(branch: str, sha: str) -> str:
         abort(404)
     patch = git.commit_patch(sha)
     return _page(
-        "diffs/patch.html", branch, commits, comments, page=sha, commit=commit, patch=patch
+        "diffs/patch.html",
+        branch,
+        commits,
+        comments,
+        page=sha,
+        commit=commit,
+        patch=patch,
+        versions=_versions(patch),
     )
 
 
@@ -163,6 +178,15 @@ def _require_branch(branch: str) -> None:
 def _commits(branch: str) -> list[Commit]:
     _require_branch(branch)
     return git.list_commits(branch)
+
+
+def _versions(patch: str) -> list[dict[str, str | None]]:
+    """The whole files, for highlighting. Without them the diff is still shown, just highlighted
+    line by line."""
+    try:
+        return git.file_versions(patch)
+    except GitError:
+        return []
 
 
 def _newest_first(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:

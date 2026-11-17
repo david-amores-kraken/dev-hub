@@ -59,7 +59,8 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
   lines are gone, is left as it was and listed as "Comments I couldn't place" (on the overview if
   its commit is gone) with its quote, so it is never shown against the wrong code.
 - Diffs are drawn in the browser by [diff2html](https://diff2html.xyz) 3.4.52, with highlight.js
-  colours. Both are vendored under `diffs/static/vendor`; there is no build step. To update them,
+  colours. Each side of a file is highlighted whole (the page gets the files from git) and then cut
+  into lines, so a docstring or other text that spans lines is coloured right. Both are vendored under `diffs/static/vendor`; there is no build step. To update them,
   download the same files from the new version.
 
 ### Reviewing a branch with the personas
