@@ -5,7 +5,7 @@ from typing import Any
 
 import pytest
 
-from dev_hub.diffs.comments import is_valid_text, on_page, open_counts, parse_target
+from dev_hub.diffs.comments import is_valid_text, open_counts, page_of, parse_target
 from dev_hub.diffs.store import add_comment, delete_comment, list_comments, update_comment
 
 SHA = "a" * 40
@@ -88,13 +88,14 @@ def test_pages_get_their_own_comments_and_counts(reviews: Path) -> None:
     shas = {SHA}
 
     def texts(page: str) -> list[str]:
-        return [c["text"] for c in comments if on_page(c, page, shas)]
+        return [c["text"] for c in comments if page_of(c["target"], shas) == page]
 
     assert texts(SHA) == ["line", "message"]
     assert texts("changes") == ["all changes"]
     assert texts("overview") == ["body"]
-    # Resolved comments aren't counted.
-    assert open_counts(comments, shas) == {SHA: 1, "changes": 1, "overview": 1}
+    # Resolved comments aren't counted, and one shown on two pages counts on both.
+    shown = [(c, page_of(c["target"], shas)) for c in comments] + [(comments[0], "changes")]
+    assert open_counts(shown) == {SHA: 1, "changes": 2, "overview": 1}
 
 
 def test_a_comment_on_a_commit_that_is_gone_goes_on_the_overview(reviews: Path) -> None:
@@ -102,12 +103,7 @@ def test_a_comment_on_a_commit_that_is_gone_goes_on_the_overview(reviews: Path) 
     add_comment("b", valid(MESSAGE), "lost message")
     comments = list_comments("b")
     shas = {"b" * 40}  # the branch no longer has SHA
-    assert [c["text"] for c in comments if on_page(c, "overview", shas)] == [
-        "lost line",
-        "lost message",
-    ]
-    assert not [c for c in comments if on_page(c, SHA, shas)]
-    assert open_counts(comments, shas) == {"overview": 2}
+    assert [page_of(c["target"], shas) for c in comments] == ["overview", "overview"]
 
 
 def test_two_programs_adding_comments_at_once_lose_none(reviews: Path) -> None:
@@ -178,4 +174,4 @@ def test_dismissed_findings_are_not_counted_as_open(reviews: Path) -> None:
     finding = add_comment("b", valid(BODY), "meh")
     add_comment("b", valid(BODY), "keep")
     set_triage("b", finding["id"], "dismiss")
-    assert open_counts(list_comments("b"), set()) == {"overview": 1}
+    assert open_counts((c, "overview") for c in list_comments("b")) == {"overview": 1}

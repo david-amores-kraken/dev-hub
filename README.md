@@ -53,6 +53,11 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
   in diffs, commit messages and the saved PR description. A comment is saved at once (there is no
   review to submit), and can be edited, resolved or deleted. Comments live in the same review file
   as the PR body, with the commit's subject and patch id and a quote of the lines.
+- A comment on a diff line shows on both pages that have the line: a commit's comment also on
+  "All changes", and an "All changes" comment also on the commit that last added (or removed) the
+  line. The line is followed through the other commits by its line number, and its text must
+  still match the quote. So a line a later commit changed stays on its own commit, and a line the
+  base already had stays on "All changes". The copy links to where the comment was made.
 - A comment is shown as Markdown, rendered like the Preview tab. A ```` ```suggestion ```` block shows
   as on GitHub: the quoted lines as removed, then the suggested lines as added.
 - Comments follow a rebase. Whenever a page of a branch is shown, a comment whose commit sha has
@@ -83,7 +88,9 @@ the folder and take the findings:
 
 - A finding on a diff line is a comment on "All changes". One on the PR description or a commit
   message is a comment on that text. One that fits nowhere stays in the persona's review.
-- Each persona's summary and verdict show under Reviews on the overview.
+- Each persona's summary and verdict show under Reviews on the overview, with its findings below,
+  each under the diff lines it is about (as a GitHub review shows them). A finding whose lines
+  have changed is marked Outdated and shows its quote.
 - A persona's finding is only acted on if I click **Address** on it. **Dismiss** hides it. My own
   comments are always acted on. `todo` lists both, and `address` records the agent's reply and
   resolves the comment.

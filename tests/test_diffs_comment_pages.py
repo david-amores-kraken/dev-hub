@@ -35,15 +35,16 @@ def comments_in(client: FlaskClient, base_url: str, url: str) -> list[dict[str, 
     return json.loads(match[1])
 
 
-def test_each_page_gets_only_its_own_comments(
+def test_each_page_gets_its_own_comments_and_the_line_comments_of_its_other_diff(
     repo: Path, client: FlaskClient, base_url: str
 ) -> None:
     one, two = list_commits("feature/x")
     url = "/diffs/feature/x/comments"
     body = {"kind": "pr_body", "commit": None, "start": 1, "end": 1, "quote": "q"}
+    two_line = line_target(two.sha, file="two.txt", quote="two")
     for target, text in (
         (line_target(one.sha), "on one"),
-        (line_target(two.sha), "on two"),
+        (two_line, "on two"),
         (line_target(None), "on all changes"),
         (body, "on the description"),
     ):
@@ -52,10 +53,29 @@ def test_each_page_gets_only_its_own_comments(
     def texts(page: str) -> list[str]:
         return [c["text"] for c in comments_in(client, base_url, f"/diffs/feature/x{page}")]
 
-    assert texts(f"/commits/{one.sha}") == ["on one"]
+    assert texts(f"/commits/{one.sha}") == ["on one", "on all changes"]
     assert texts(f"/commits/{two.sha}") == ["on two"]
-    assert texts("/changes") == ["on all changes"]
+    assert texts("/changes") == ["on one", "on two", "on all changes"]
     assert texts("") == ["on the description"]
+
+
+def test_a_comment_shown_on_its_other_page_links_back_and_counts_there(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    one, _ = list_commits("feature/x")
+    post(
+        client, base_url, "/diffs/feature/x/comments", {"target": line_target(one.sha), "text": "a"}
+    )
+    [comment] = comments_in(client, base_url, "/diffs/feature/x/changes")
+    assert comment["mirror"] == {
+        "label": "commit “Add one”",
+        "url": f"/diffs/feature/x/commits/{one.sha}",
+    }
+    assert comment["target"]["commit"] is None
+    [own] = comments_in(client, base_url, f"/diffs/feature/x/commits/{one.sha}")
+    assert "mirror" not in own
+    page = client.get("/diffs/feature/x", base_url=base_url).get_data(as_text=True)
+    assert page.count('<span class="pill open" title="Open comments">1</span>') == 2
 
 
 def test_open_comments_are_counted_in_the_list_of_parts(

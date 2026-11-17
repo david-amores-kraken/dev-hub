@@ -200,3 +200,36 @@ def test_an_empty_suggestion_removes_the_quoted_lines(
     )
     [comment] = comments_in(client, base_url, f"/diffs/feature/x/commits/{one.sha}")
     assert '<div class="suggestion-lines"><div class="del">one</div></div>' in comment["html"]
+
+
+def test_a_review_lists_its_findings_with_the_diff_lines_they_are_about(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    from dev_hub.diffs.store import add_comment, add_review
+
+    finding = add_comment(
+        "feature/x", line_target(None), "Why one?", persona="correctness", finding_id="CR-1"
+    )
+    gone = add_comment(
+        "feature/x",
+        line_target(None, quote="not there"),
+        "Old news",
+        persona="correctness",
+        finding_id="CR-2",
+    )
+    add_comment(
+        "feature/x", line_target(None), "Not this review", persona="tests", finding_id="TS-1"
+    )
+    review = {"persona": "correctness", "name": "Correctness", "emoji": "🧠", "sha": "a" * 40}
+    add_review(
+        "feature/x",
+        {**review, "verdict": "comments", "summary": "S.", "findings": ["CR-1", "CR-2"]},
+        [],
+    )
+    page = client.get("/diffs/feature/x", base_url=base_url).get_data(as_text=True)
+    match = re.search(r'id="review-comments">(.*?)</script>', page, re.S)
+    assert match
+    assert [c["id"] for c in json.loads(match[1])] == [finding["id"], gone["id"]]
+    assert f'data-comment="{finding["id"]}"' in page
+    assert '<tr class="add chosen"><td class="num"></td><td class="num">1</td>' in page
+    assert page.count('<span class="pill">Outdated</span>') == 1

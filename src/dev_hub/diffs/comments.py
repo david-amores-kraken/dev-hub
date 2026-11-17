@@ -14,7 +14,7 @@ sense after the lines move or change.
 
 from __future__ import annotations
 
-from collections.abc import Collection
+from collections.abc import Collection, Iterable
 from typing import Any
 
 KINDS = ("line", "message", "pr_body")
@@ -58,25 +58,21 @@ def is_valid_text(text: object) -> bool:
     return isinstance(text, str) and len(text.strip()) > 0 and len(text) <= MAX_COMMENT
 
 
-def on_page(comment: dict[str, Any], page: str, shas: Collection[str]) -> bool:
-    """Whether a comment belongs on a page: "overview", "changes", or a commit's sha.
-
-    `shas` are the branch's commits. A comment on a commit that is no longer one of them is on the
-    overview, where it is listed as one that couldn't be placed."""
-    return _page_of(comment["target"], shas) == page
-
-
-def open_counts(comments: list[dict[str, Any]], shas: Collection[str]) -> dict[str, int]:
-    """How many open comments each page has, keyed like `on_page`."""
+def open_counts(shown: Iterable[tuple[dict[str, Any], str]]) -> dict[str, int]:
+    """How many open comments each page shows, from (comment, page) pairs. A comment shown on two
+    pages counts on both. Dismissed findings don't count."""
     counts: dict[str, int] = {}
-    for comment in comments:
+    for comment, page in shown:
         if comment["status"] == "open" and comment.get("triage") != "dismiss":
-            page = _page_of(comment["target"], shas)
             counts[page] = counts.get(page, 0) + 1
     return counts
 
 
-def _page_of(target: dict[str, Any], shas: Collection[str]) -> str:
+def page_of(target: dict[str, Any], shas: Collection[str]) -> str:
+    """The page a comment was made on: "overview", "changes", or a commit's sha.
+
+    `shas` are the branch's commits. A comment on a commit that is no longer one of them is on the
+    overview, where it is listed as one that couldn't be placed."""
     if target["kind"] == "pr_body" or (target["commit"] and target["commit"] not in shas):
         return "overview"
     return target["commit"] or "changes"

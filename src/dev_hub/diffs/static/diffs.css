@@ -88,3 +88,20 @@ details.review { background: var(--surface); border: 1px solid var(--line); bord
 details.review summary { font-weight: 600; }
 details.review summary .meta { font-weight: 400; margin-left: 8px; }
 details.review p { margin: 6px 0; }
+
+/* A finding under its review, with the end of the diff it is about, as GitHub shows a review. */
+.finding { border: 1px solid var(--line); border-radius: 6px; margin: 10px 0; overflow: hidden; background: var(--bg); }
+.finding-head { display: flex; gap: 8px; align-items: center; padding: 6px 10px; border-bottom: 1px solid var(--line); background: var(--surface); font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+.finding-head a { text-decoration: none; font-weight: 600; }
+.finding-head a:hover { text-decoration: underline; }
+.finding .comments { max-width: none; }
+table.snippet { width: 100%; border-collapse: collapse; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; display: block; overflow-x: auto; }
+table.snippet td { border: 0; padding: 0 8px; white-space: pre; vertical-align: top; }
+table.snippet td.num { width: 1%; text-align: right; color: var(--muted); user-select: none; }
+table.snippet td.sign { width: 1%; padding: 0 2px; color: var(--muted); user-select: none; }
+table.snippet td.code { width: 100%; }
+table.snippet tr.add td { background: color-mix(in srgb, var(--skip) 16%, transparent); }
+table.snippet tr.del td { background: color-mix(in srgb, var(--blocker) 14%, transparent); }
+table.snippet tr.chosen td { box-shadow: inset 0 0 0 100vmax color-mix(in srgb, var(--accent) 12%, transparent); }
+table.snippet tr.chosen td.num { color: var(--text); }
+.comment .mirror { font-size: 12px; }
