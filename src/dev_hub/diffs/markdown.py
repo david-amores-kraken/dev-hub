@@ -2,6 +2,9 @@
 
 GitHub renders more than plain Markdown: a few HTML tags (<details>, <summary>, <br>...) and
 emoji shortcodes such as :rocket:. Both are handled here, nothing else from raw HTML is.
+
+Comments are rendered the same way, plus GitHub's ```suggestion blocks: the lines the comment is
+on, shown as removed, then the suggested lines, shown as added.
 """
 
 from __future__ import annotations
@@ -11,6 +14,7 @@ from typing import Any
 
 import emoji
 from markdown_it import MarkdownIt
+from markdown_it.common.utils import escapeHtml
 from markdown_it.renderer import RendererHTML
 from markdown_it.rules_core import StateCore
 from markdown_it.token import Token
@@ -90,6 +94,27 @@ def _render_html(
     return clean_html(tokens[idx].content)
 
 
+def _render_fence(
+    self: RendererHTML, tokens: list[Token], idx: int, options: OptionsDict, env: Any
+) -> str:
+    token = tokens[idx]
+    if token.info.strip() != "suggestion":
+        return self.fence(tokens, idx, options, env)
+    quote = env.get("quote") if isinstance(env, dict) else None
+    removed = quote.split("\n") if quote is not None else []
+    added = token.content.removesuffix("\n").split("\n") if token.content else []
+    rows = [_suggestion_line("del", line) for line in removed]
+    rows += [_suggestion_line("add", line) for line in added]
+    return (
+        '<div class="suggestion"><div class="suggestion-head">Suggested change</div>'
+        f'<div class="suggestion-lines">{"".join(rows)}</div></div>\n'
+    )
+
+
+def _suggestion_line(kind: str, line: str) -> str:
+    return f'<div class="{kind}">{escapeHtml(line) or "&#8203;"}</div>'
+
+
 def _shortcode(found: re.Match[str]) -> str:
     return emoji.emojize(found.group(), language="alias")
 
@@ -112,8 +137,10 @@ _parser = (
 )
 _parser.add_render_rule("html_block", _render_html)
 _parser.add_render_rule("html_inline", _render_html)
+_parser.add_render_rule("fence", _render_fence)
 _parser.core.ruler.push("emoji", _emojis)
 
 
-def render(text: str) -> str:
-    return _parser.render(text)
+def render(text: str, quote: str | None = None) -> str:
+    """`quote` is the text of the lines a comment is on, which a suggestion replaces."""
+    return _parser.render(text, {"quote": quote})

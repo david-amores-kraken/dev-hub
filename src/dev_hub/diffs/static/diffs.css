@@ -54,7 +54,22 @@ tr.comments-row > td, tr.composer-row > td { padding: 0; border: 0; font-family:
 .comments { display: flex; flex-direction: column; gap: 8px; padding: 8px 12px; max-width: 900px; }
 .comment, form.editor { background: var(--surface); border: 1px solid var(--line); border-left: 3px solid var(--accent); border-radius: 6px; padding: 8px 10px; }
 .comment.resolved { opacity: .6; border-left-color: var(--skip); }
-.comment .text { white-space: pre-wrap; margin: 4px 0; }
+.comment .text { margin: 4px 0; overflow-wrap: anywhere; }
+.comment .text > :first-child { margin-top: 0; }
+.comment .text > :last-child { margin-bottom: 0; }
+.comment .text p, .comment .text pre, .comment .text ul, .comment .text ol { margin: 6px 0; }
+.comment .text blockquote { margin: 6px 0; padding: 0 12px; color: var(--muted); border-left: 3px solid var(--line); }
+/* A ```suggestion block: the lines it replaces, then what it suggests, like on GitHub. */
+.suggestion { border: 1px solid var(--line); border-radius: 6px; margin: 6px 0; overflow: hidden; }
+.suggestion-head { font-size: 12px; color: var(--muted); padding: 4px 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
+/* One column as wide as the longest line, so every line's shading runs the same length. */
+.suggestion-lines { display: grid; grid-template-columns: minmax(100%, max-content); overflow-x: auto; font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; }
+.suggestion-lines > div { white-space: pre; padding: 0 10px 0 24px; position: relative; }
+.suggestion-lines > div::before { position: absolute; left: 8px; }
+.suggestion-lines .del { background: color-mix(in srgb, var(--blocker) 14%, transparent); }
+.suggestion-lines .del::before { content: "-"; }
+.suggestion-lines .add { background: color-mix(in srgb, var(--skip) 16%, transparent); }
+.suggestion-lines .add::before { content: "+"; }
 .comment .controls { margin: 4px 0 0; gap: 4px; }
 pre.quote { margin: 6px 0; font-size: 12px; white-space: pre-wrap; max-height: 8em; overflow: auto; }
 tr.composer-row form.editor { margin: 8px 12px; max-width: 900px; }

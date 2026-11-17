@@ -53,6 +53,8 @@ base doesn't. The base is `DEV_HUB_BASE` (default `origin/master`).
   in diffs, commit messages and the saved PR description. A comment is saved at once (there is no
   review to submit), and can be edited, resolved or deleted. Comments live in the same review file
   as the PR body, with the commit's subject and patch id and a quote of the lines.
+- A comment is shown as Markdown, rendered like the Preview tab. A ```` ```suggestion ```` block shows
+  as on GitHub: the quoted lines as removed, then the suggested lines as added.
 - Comments follow a rebase. Whenever a page of a branch is shown, a comment whose commit sha has
   gone is matched to the commit that replaced it (same patch id, else same subject), and its lines
   are searched for by their quote. What moved is saved. A comment that can't be matched, or whose
