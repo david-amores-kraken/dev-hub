@@ -10,6 +10,8 @@ How to work in this repo. For what the hub is and how it fits together, see `REA
 
 ## Pull requests
 
+- Every change to this repo goes in a PR for me to review, however small. When I ask for a change, branch off `master`, commit, push and open the PR, then give me the link. Don't stop at edits in the working copy.
+- Code outside this repo has no PR. That means the skills and the `pr-brief` package under `~/.claude`, which aren't in git. Edit them in place and tell me what you changed. A request that touches both gets a PR for the repo part only.
 - Keep the description short and in simple language: what changed, why, and anything the reviewer should look at first.
 - Don't list every file or function. The diff does that.
 - Open the PR so it is ready to review, and make sure the checks below pass first.
