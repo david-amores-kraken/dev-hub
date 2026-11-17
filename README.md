@@ -102,7 +102,6 @@ The repo is only the hub. These live outside it and need setting up by hand:
 - **The review helpers** in `~/.claude/lib/review_context.py`, which the Diffs review commands load.
 - **For persona reviews** (`dev_hub.review`):
   - the persona agents in `~/.claude/agents` (`review-*.md`),
-  - the `self-review` skill, whose `reference/brief.md` `prepare` reads,
   - the `local-review` skill, linked from this repo (see its Setup section),
   - optionally `comment-preferences.md`, `commit-message-preferences.md` and
     `pr-description-preferences.md` in `~/.claude`, which `prepare` hands to the personas.
