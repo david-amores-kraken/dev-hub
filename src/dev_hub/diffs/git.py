@@ -18,6 +18,10 @@ from typing import Any
 from dev_hub.config import base_ref, repo_dir
 
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+# "index <old>..<new>" in a patch names the blobs of a file before and after the change.
+INDEX_RE = re.compile(r"^index ([0-9a-f]+)\.\.([0-9a-f]+)", re.MULTILINE)
+NO_BLOB = re.compile(r"^0+$")
+MAX_BLOB = 1_000_000  # bytes; a bigger file is highlighted line by line instead
 FIELD = "\x1f"
 RECORD = "\x1e"
 
@@ -104,6 +108,58 @@ def patch_id(sha: str) -> str | None:
     so it is how a commit is found again after its sha changes."""
     output = _git("patch-id", "--stable", stdin=commit_patch(sha))
     return output.split()[0] if output.strip() else None
+
+
+def file_versions(patch: str) -> list[dict[str, str | None]]:
+    """The whole file before and after, for each file of the patch, in the patch's order.
+
+    The diff page highlights whole files, so code that spans lines (a docstring) is coloured
+    right. A side is None when the file didn't exist there, is binary or is too big.
+    """
+    files = re.split(r"^diff --git ", patch, flags=re.MULTILINE)[1:]
+    pairs = []
+    for header in files:
+        found = INDEX_RE.search(header.split("\n@@", 1)[0])
+        pairs.append((found[1], found[2]) if found else (None, None))
+    wanted = {blob for pair in pairs for blob in pair if blob and not NO_BLOB.match(blob)}
+    blobs = _blobs(sorted(wanted))
+    return [{"old": blobs.get(old or ""), "new": blobs.get(new or "")} for old, new in pairs]
+
+
+def _blobs(names: list[str]) -> dict[str, str]:
+    """The text of each named blob that is small enough and not binary."""
+    if not names:
+        return {}
+    sizes = _git(
+        "cat-file",
+        "--batch-check=%(objectname) %(objecttype) %(objectsize)",
+        stdin="\n".join(names) + "\n",
+    )
+    small = [
+        name
+        for name, line in zip(names, sizes.splitlines(), strict=True)
+        if line.split()[1:2] == ["blob"] and int(line.split()[2]) <= MAX_BLOB
+    ]
+    if not small:
+        return {}
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_dir()), "cat-file", "--batch"],
+            input=("\n".join(small) + "\n").encode(),
+            capture_output=True,
+            check=True,
+        )
+    except (OSError, subprocess.CalledProcessError) as error:
+        raise GitError(str(error)) from error
+    out, position, texts = result.stdout, 0, {}
+    for name in small:
+        header_end = out.index(b"\n", position)
+        size = int(out[position:header_end].split()[2])
+        content = out[header_end + 1 : header_end + 1 + size]
+        position = header_end + 1 + size + 1  # the content is followed by a newline
+        if b"\0" not in content:
+            texts[name] = content.decode("utf-8", errors="replace")
+    return texts
 
 
 def _git(*args: str, stdin: str | None = None) -> str:

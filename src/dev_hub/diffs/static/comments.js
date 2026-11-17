@@ -296,10 +296,7 @@ function start(review) {
       queueMicrotask(() => textarea.focus());
       return el;
     }
-    const text = document.createElement("div");
-    text.className = "text";
-    text.textContent = comment.text;
-    el.append(text);
+    el.append(markdown(comment));
     for (const reply of comment.replies ?? []) {
       const answer = document.createElement("div");
       answer.className = "reply";
@@ -307,10 +304,7 @@ function start(review) {
       by.className = "meta";
       by.textContent = [reply.author, reply.commit ? `in ${reply.commit}` : null, reply.created.slice(0, 16).replace("T", " ")]
         .filter(Boolean).join(" · ");
-      const words = document.createElement("div");
-      words.className = "text";
-      words.textContent = reply.text;
-      answer.append(by, words);
+      answer.append(by, markdown(reply));
       el.append(answer);
     }
     const actions = document.createElement("div");
@@ -341,6 +335,16 @@ function start(review) {
     actions.append(resolve, edit, remove);
     el.append(actions);
     return el;
+  }
+
+  // The server renders the text the way GitHub does (Markdown, ```suggestion blocks) and only
+  // lets safe HTML through. Plain text is the fallback.
+  function markdown(item) {
+    const text = document.createElement("div");
+    text.className = "text md";
+    if (typeof item.html === "string") text.innerHTML = item.html;
+    else text.textContent = item.text;
+    return text;
   }
 
   function replace(updated) {

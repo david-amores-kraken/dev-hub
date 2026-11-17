@@ -3,11 +3,13 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from helpers import commit, git
 
 from dev_hub.diffs.git import (
     GitError,
     branch_patch,
     commit_patch,
+    file_versions,
     has_branch,
     list_branches,
     list_commits,
@@ -73,3 +75,20 @@ def test_patch_id_ignores_the_parent_and_the_message(repo: Path) -> None:
     [again] = [c for c in list_commits("rebased")]
     assert again.sha != one.sha
     assert patch_id(again.sha) == original
+
+
+def test_file_versions_are_the_whole_files_in_the_patch_order(repo: Path) -> None:
+    commit(repo, "base.txt", "base\nchanged\n", "Change base")
+    commit(repo, "new.txt", "new\n", "Add new")
+    patch = git(repo, "diff", "HEAD~2", "HEAD") + "\n"
+    assert file_versions(patch) == [
+        {"old": "base\n", "new": "base\nchanged\n"},
+        {"old": None, "new": "new\n"},  # it didn't exist before
+    ]
+
+
+def test_binary_files_have_no_versions(repo: Path) -> None:
+    (repo / "blob.bin").write_bytes(b"\0\1\2")
+    git(repo, "add", "blob.bin")
+    git(repo, "commit", "-q", "-m", "Add a binary")
+    assert file_versions(git(repo, "show", "--format=", "HEAD")) == [{"old": None, "new": None}]

@@ -68,7 +68,15 @@ def changes(branch: str) -> str:
     commits = _commits(branch)
     patch = git.branch_patch(branch)
     comments = follow(branch, commits, patch=patch)
-    return _page("diffs/patch.html", branch, commits, comments, page="changes", patch=patch)
+    return _page(
+        "diffs/patch.html",
+        branch,
+        commits,
+        comments,
+        page="changes",
+        patch=patch,
+        versions=_versions(patch),
+    )
 
 
 @blueprint.get("/<path:branch>/commits/<sha>")
@@ -80,7 +88,14 @@ def show_commit(branch: str, sha: str) -> str:
         abort(404)
     patch = git.commit_patch(sha)
     return _page(
-        "diffs/patch.html", branch, commits, comments, page=sha, commit=commit, patch=patch
+        "diffs/patch.html",
+        branch,
+        commits,
+        comments,
+        page=sha,
+        commit=commit,
+        patch=patch,
+        versions=_versions(patch),
     )
 
 
@@ -123,7 +138,7 @@ def create_comment(branch: str) -> Reply:
         # Remember which commit this was, so it can be found again after a rebase.
         target["subject"] = commits[target["commit"]].subject
         target["patch_id"] = git.patch_id(target["commit"])
-    return jsonify(add_comment(branch, target, data["text"]))
+    return jsonify(_shown(add_comment(branch, target, data["text"])))
 
 
 @blueprint.post("/<path:branch>/comments/<comment_id>")
@@ -143,7 +158,7 @@ def change_comment(branch: str, comment_id: str) -> Reply:
         comment = set_triage(branch, comment_id, data["triage"])
     if comment is None:
         abort(404)
-    return jsonify(comment)
+    return jsonify(_shown(comment))
 
 
 @blueprint.post("/<path:branch>/comments/<comment_id>/delete")
@@ -163,6 +178,24 @@ def _require_branch(branch: str) -> None:
 def _commits(branch: str) -> list[Commit]:
     _require_branch(branch)
     return git.list_commits(branch)
+
+
+def _shown(comment: dict[str, Any]) -> dict[str, Any]:
+    """A comment as the page gets it: with its text, and its replies', rendered as GitHub would.
+    A suggestion replaces the quoted lines."""
+    quote = comment.get("target", {}).get("quote")
+    replies = [{**r, "html": render(r.get("text", ""), quote)} for r in comment.get("replies", [])]
+    shown = {**comment, "html": render(comment.get("text", ""), quote)}
+    return {**shown, "replies": replies} if "replies" in comment else shown
+
+
+def _versions(patch: str) -> list[dict[str, str | None]]:
+    """The whole files, for highlighting. Without them the diff is still shown, just highlighted
+    line by line."""
+    try:
+        return git.file_versions(patch)
+    except GitError:
+        return []
 
 
 def _newest_first(reviews: list[dict[str, Any]]) -> list[dict[str, Any]]:
@@ -191,7 +224,7 @@ def _page(
         branch=branch,
         commits=commits,
         page=page,
-        comments=[c for c in comments if on_page(c, page, shas)],
+        comments=[_shown(c) for c in comments if on_page(c, page, shas)],
         counts=open_counts(comments, shas),
         feature_slug=slug_of(branch) if has_feature(slug_of(branch)) else None,
         **context,

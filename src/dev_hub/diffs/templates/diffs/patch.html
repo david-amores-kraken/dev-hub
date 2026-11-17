@@ -18,6 +18,7 @@
 {% if patch.strip() %}
 <div id="diff"></div>
 <script type="application/json" id="patch">{{ patch | tojson }}</script>
+<script type="application/json" id="versions">{{ versions | tojson }}</script>
 {% else %}
 <p class="muted">No file changes.</p>
 {% endif %}

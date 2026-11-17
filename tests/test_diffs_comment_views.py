@@ -49,6 +49,7 @@ def test_a_line_comment_is_saved_with_the_commit_it_was_made_on(
     assert (comment["status"], comment["text"]) == ("open", "Why this?")
     assert comment["target"]["subject"] == "Add one"
     assert comment["target"]["patch_id"] == patch_id(one.sha)
+    assert comment.pop("html") == "<p>Why this?</p>\n"  # shown, not saved
     assert list_comments("feature/x") == [comment]
 
 
@@ -167,3 +168,35 @@ def test_the_overview_lists_reviews_newest_first_and_opens_the_latest_per_person
     assert page.count('<details class="review" open>') == 1
     assert "First pass &lt;b&gt;fine&lt;/b&gt;." in page
     assert "Outside the diff." in page
+
+
+def test_a_comment_is_shown_as_markdown_and_its_suggestion_replaces_the_quoted_lines(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    one, _ = list_commits("feature/x")
+    text = "Use **two**.\n\n```suggestion\ntwo <b>\n```"
+    post(
+        client,
+        base_url,
+        "/diffs/feature/x/comments",
+        {"target": line_target(one.sha), "text": text},
+    )
+    [comment] = comments_in(client, base_url, f"/diffs/feature/x/commits/{one.sha}")
+    assert "<strong>two</strong>" in comment["html"]
+    assert "Suggested change" in comment["html"]
+    assert '<div class="del">one</div><div class="add">two &lt;b&gt;</div>' in comment["html"]
+
+
+def test_an_empty_suggestion_removes_the_quoted_lines(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    one, _ = list_commits("feature/x")
+    target = line_target(one.sha)
+    post(
+        client,
+        base_url,
+        "/diffs/feature/x/comments",
+        {"target": target, "text": "```suggestion\n```"},
+    )
+    [comment] = comments_in(client, base_url, f"/diffs/feature/x/commits/{one.sha}")
+    assert '<div class="suggestion-lines"><div class="del">one</div></div>' in comment["html"]
