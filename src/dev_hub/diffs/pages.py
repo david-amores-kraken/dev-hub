@@ -6,13 +6,14 @@ these, so a comment is placed, mirrored and listed under its review the same way
 
 from __future__ import annotations
 
+import re
 from functools import cache
 from typing import Any
 
 from flask import url_for
 
 from dev_hub.diffs import git
-from dev_hub.diffs.anchors import Patch, Row, read_patch
+from dev_hub.diffs.anchors import Patch, Row, matches, read_patch
 from dev_hub.diffs.comments import page_of
 from dev_hub.diffs.git import Commit, GitError
 from dev_hub.diffs.markdown import render
@@ -148,3 +149,63 @@ def _url(branch: str, target: dict[str, Any]) -> str:
             "diffs.overview" if target["kind"] == "pr_body" else "diffs.changes", branch=branch
         )
     return url_for("diffs.show_commit", branch=branch, sha=target["commit"])
+
+
+FILE_HEADER_RE = re.compile(r"^diff --git a/(.*) b/(.*)$", re.MULTILINE)
+
+
+def page_files(patch: str) -> list[dict[str, Any]]:
+    """The files of a page's diff, in the diff's order, as the page names them (see
+    `read_patch`). Each has its name before (`old_path`, "" if it was added), its `status`, and
+    the lines a comment can go on: removed lines on the old side, the rest on the new side, as
+    the diff page offers them. `versions(patch)` has their contents, in the same order."""
+    listed = []
+    for block in re.split(r"^(?=diff --git )", patch, flags=re.MULTILINE):
+        if not block.startswith("diff --git "):
+            continue
+        parsed = read_patch(block)
+        if parsed.names:
+            path, (old, new) = next(iter(parsed.names.items()))
+        else:  # a binary file: the diff has no ---/+++ lines to name it
+            header = FILE_HEADER_RE.search(block)
+            old, new = (header[1], header[2]) if header else ("", "")
+            old = "" if "\nnew file mode" in block else old
+            new = "" if "\ndeleted file mode" in block else new
+            path = new or old
+        rows = parsed.files.get(path, [])
+        listed.append(
+            {
+                "path": path,
+                "old_path": old,
+                "status": "added"
+                if not old
+                else "deleted"
+                if not new
+                else "renamed"
+                if old != new
+                else "modified",
+                "lines": {
+                    "old": [row.old for row in rows if row.new is None],
+                    "new": [row.new for row in rows if row.new is not None],
+                },
+            }
+        )
+    return listed
+
+
+def is_placed(
+    target: dict[str, Any], page: str, patches: dict[str, Patch], texts: dict[str, str]
+) -> bool:
+    """Whether a comment's lines are on its page with the text they had, so it can be shown on
+    them. `patches` has each page's parsed diff, and `texts` each commit message by sha and the
+    PR description as "overview". A comment on a commit that has gone is never placed."""
+    lines = list(range(target["start"], target["end"] + 1))
+    if target["kind"] == "line":
+        patch = patches.get(page)
+        rows = patch.files.get(target["file"], []) if patch else []
+        return matches(rows, target["side"], lines, target["quote"])
+    if target["kind"] == "message" and page == "overview":
+        return False
+    numbered = dict(enumerate(texts.get(page, "").split("\n"), start=1))
+    quote = [line.rstrip() for line in target["quote"].split("\n")]
+    return [numbered.get(n, "").rstrip() for n in lines] == quote

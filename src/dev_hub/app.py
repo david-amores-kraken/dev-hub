@@ -13,6 +13,7 @@ from typing import Any
 from flask import Flask, Response, jsonify, redirect, request, url_for
 from werkzeug.wrappers import Response as BaseResponse
 
+from dev_hub.api import blueprint as api
 from dev_hub.config import HOST, PORT
 from dev_hub.diffs import blueprint as diffs
 from dev_hub.features import blueprint as features
@@ -62,4 +63,5 @@ def create_app() -> Flask:
 
     for _, blueprint, prefix in SECTIONS:
         app.register_blueprint(blueprint, url_prefix=prefix)
+    app.register_blueprint(api, url_prefix="/api")  # not a section, so not in the nav
     return app
