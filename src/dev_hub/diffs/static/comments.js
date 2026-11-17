@@ -71,8 +71,8 @@ function start(review) {
         const text = el.querySelector(".d2h-code-line-ctn")?.textContent ?? "";
         rows.push({ el, gutter, oldNo, newNo, text });
       });
-      // A renamed file is shown as "old → new". Comments are about the new name.
-      return { kind: "line", file: name.split(" → ").at(-1), rows };
+      // Comments on a renamed file are about its new path. newPath comes from diffs.js.
+      return { kind: "line", file: newPath(name), rows };
     });
   }
 
