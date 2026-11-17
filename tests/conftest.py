@@ -1,4 +1,4 @@
-"""Keep the tests away from the real ~/pr-reviews, ~/Plans and ~/Reports."""
+"""Keep the tests away from the real ~/pr-reviews, ~/Plans, ~/Reports, ~/E2E and ~/Reviews."""
 
 from __future__ import annotations
 
@@ -18,10 +18,11 @@ from dev_hub.config import HOST, PORT
 
 
 @pytest.fixture(autouse=True)
-def no_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    """Point the Diffs section at a repo that isn't there, so no test reads a real one. The
-    `repo` fixture replaces this."""
-    monkeypatch.setenv("DEV_HUB_REPO", str(tmp_path / "no-repo"))
+def no_real_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point every folder the hub reads at one that isn't there, so no test reads my real
+    repo, plans, reports, e2e results or reviews. The fixtures below replace these."""
+    for name in ("REPO", "PLANS", "REPORTS", "E2E", "REVIEWS"):
+        monkeypatch.setenv(f"DEV_HUB_{name}", str(tmp_path / f"no-{name.lower()}"))
 
 
 @pytest.fixture
