@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "A local web page for my dev work: PR briefs, feature plans, and whatever comes next."
 requires-python = ">=3.12"
 dependencies = [
+    "emoji>=2.16.0",
     "flask>=3.1",
     "markdown-it-py>=4.3.0",
     "pr-brief",

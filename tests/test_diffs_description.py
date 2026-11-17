@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -162,3 +163,65 @@ def test_preview_box_class_cant_clash_with_the_diff_highlighter(
     # "markdown". Styling that class boxed each line of a .md diff.
     css = client.get("/diffs/static/diffs.css", base_url=base_url).get_data(as_text=True)
     assert ".markdown" not in css
+
+
+def preview(client: FlaskClient, base_url: str, body: str) -> str:
+    _, data = post(client, base_url, "/diffs/feature/x/preview", {"body": body})
+    return data["html"]
+
+
+def test_preview_keeps_details_and_summary_and_renders_markdown_inside(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    html = preview(
+        client,
+        base_url,
+        "<details open>\n<summary>More <b>info</b></summary>\n\n- **one**\n\n</details>",
+    )
+    assert "<details open>" in html
+    assert "<summary>More <b>info</b></summary>" in html
+    assert "<li><strong>one</strong></li>" in html
+    assert "</details>" in html
+
+
+@pytest.mark.parametrize(
+    "body",
+    [
+        "<details onclick=alert(1)>x</details>",
+        "<summary style='x'>x</summary>",
+        "<script>alert(1)</script>",
+        "<a href='javascript:alert(1)'>x</a>",
+        "<img src=x onerror=alert(1)>",
+        "<iframe src=x></iframe>",
+        "<b open>x</b>",
+        "<details open/ onclick=x>",
+    ],
+)
+def test_preview_only_lets_plain_allowed_tags_through(
+    repo: Path, client: FlaskClient, base_url: str, body: str
+) -> None:
+    html = preview(client, base_url, body)
+    # The attack text may show on the page as text (&lt;...), but never as a real tag.
+    for bad in ("<script", "<iframe", "<img", "<a ", "<b open"):
+        assert bad not in html
+    assert not re.search(r"<[^>]*(onclick|onerror|style)=", html)
+
+
+def test_preview_hides_html_comments(repo: Path, client: FlaskClient, base_url: str) -> None:
+    assert "secret" not in preview(client, base_url, "<!-- secret -->\n\nShown")
+
+
+def test_preview_turns_emoji_shortcodes_into_emoji(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    html = preview(client, base_url, ":rocket: :paperclip: :information_desk_person: :nope:")
+    assert "🚀 📎 💁 :nope:" in html
+
+
+def test_preview_leaves_emoji_lookalikes_and_code_alone(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    html = preview(client, base_url, "at 10:30:15 and a:b:c, `:rocket:`\n\n```\n:rocket:\n```")
+    assert "10:30:15" in html
+    assert "a:b:c" in html
+    assert "🚀" not in html
