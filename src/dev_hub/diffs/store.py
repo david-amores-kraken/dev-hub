@@ -5,7 +5,8 @@ Each branch gets one JSON file in the reviews folder, named after the branch (wi
 `{id, status, text, created, target}`, and `comments.py` says what a target is. Comments I write
 have nothing more. A finding from a reviewer persona also has `persona`, `author` (its name),
 `finding_id`, `severity`, and `triage` once I answer it ("address" or "dismiss"). Any comment can
-have `replies` from the agent that addressed it. A review is a persona's summary of one pass over
+have `replies`, each `{id, author, text, commit, created}`: mine have the author `me`, and the
+agent that addressed the comment uses its own name. A review is a persona's summary of one pass over
 the branch. Keys the hub doesn't know are kept when it saves, so later features can add to the
 same file.
 """
@@ -91,6 +92,9 @@ def set_triage(branch: str, comment_id: str, triage: str | None) -> dict[str, An
     return _change(branch, change)
 
 
+ME = "me"
+
+
 def add_reply(
     branch: str, comment_id: str, author: str, text: str, commit: str | None = None
 ) -> dict[str, Any] | None:
@@ -99,12 +103,58 @@ def add_reply(
     def change(data: dict[str, Any]) -> dict[str, Any] | None:
         comment = _find(data, comment_id)
         if comment is not None:
-            reply = {"author": author, "text": text, "commit": commit, "created": _now()}
-            comment.setdefault("replies", []).append(reply)
+            comment.setdefault("replies", []).append(_reply(author, text, commit))
             comment["status"] = "resolved"
         return comment
 
     return _change(branch, change)
+
+
+def add_my_reply(branch: str, comment_id: str, text: str) -> dict[str, Any] | None:
+    """Reply to a comment myself. That means there is more to do, so the comment is open again,
+    and a finding I hadn't answered is marked "address". A dismissed one stays dismissed."""
+
+    def change(data: dict[str, Any]) -> dict[str, Any] | None:
+        comment = _find(data, comment_id)
+        if comment is not None:
+            comment.setdefault("replies", []).append(_reply(ME, text, None))
+            comment["status"] = "open"
+            if comment.get("finding_id") and not comment.get("triage"):
+                comment["triage"] = "address"
+        return comment
+
+    return _change(branch, change)
+
+
+def change_my_reply(
+    branch: str, comment_id: str, reply_id: str, text: str | None
+) -> dict[str, Any] | None:
+    """Change the text of one of my replies, or delete it (`text` None). Returns the comment, or
+    None if there is no such reply of mine."""
+
+    def change(data: dict[str, Any]) -> dict[str, Any] | None:
+        comment = _find(data, comment_id)
+        replies = comment.get("replies", []) if comment else []
+        reply = next((r for r in replies if r.get("id") == reply_id), None)
+        if comment is None or reply is None or reply.get("author") != ME:
+            return None
+        if text is None:
+            replies.remove(reply)
+        else:
+            reply["text"] = text
+        return comment
+
+    return _change(branch, change)
+
+
+def _reply(author: str, text: str, commit: str | None) -> dict[str, Any]:
+    return {
+        "id": uuid.uuid4().hex[:12],
+        "author": author,
+        "text": text,
+        "commit": commit,
+        "created": _now(),
+    }
 
 
 def list_reviews(branch: str) -> list[dict[str, Any]]:

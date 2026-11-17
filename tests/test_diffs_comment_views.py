@@ -233,3 +233,33 @@ def test_a_review_lists_its_findings_with_the_diff_lines_they_are_about(
     assert f'data-comment="{finding["id"]}"' in page
     assert '<tr class="add chosen"><td class="num"></td><td class="num">1</td>' in page
     assert page.count('<span class="pill">Outdated</span>') == 1
+
+
+def test_i_can_reply_to_a_finding_and_change_or_delete_only_my_replies(
+    repo: Path, client: FlaskClient, base_url: str
+) -> None:
+    from dev_hub.diffs.store import add_comment, add_reply, set_triage
+
+    finding = add_comment("feature/x", line_target(None), "Off by one", finding_id="CR-1")
+    add_reply("feature/x", finding["id"], "TARS", "Fixed.")
+    url = f"/diffs/feature/x/comments/{finding['id']}/replies"
+    status, comment = post(client, base_url, url, {"text": "Not **quite**."})
+    assert status == 200
+    # A reply means there is more to do: open again, and marked to address.
+    assert (comment["status"], comment["triage"]) == ("open", "address")
+    agents, mine = comment["replies"]
+    assert (mine["author"], mine["text"]) == ("me", "Not **quite**.")
+    assert "<strong>quite</strong>" in mine["html"]
+
+    assert (
+        post(client, base_url, f"{url}/{mine['id']}", {"text": "Nearly."})[1]["replies"][1]["text"]
+        == "Nearly."
+    )
+    assert post(client, base_url, f"{url}/{agents['id']}", {"text": "Mine now"})[0] == 404
+    assert post(client, base_url, f"{url}/{mine['id']}", {"text": " "})[0] == 400
+    assert post(client, base_url, url, {"text": ""})[0] == 400
+    assert len(post(client, base_url, f"{url}/{mine['id']}/delete", {})[1]["replies"]) == 1
+    assert post(client, base_url, "/diffs/feature/x/comments/nope/replies", {"text": "x"})[0] == 404
+
+    set_triage("feature/x", finding["id"], "dismiss")
+    assert post(client, base_url, url, {"text": "Why?"})[1]["triage"] == "dismiss"

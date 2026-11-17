@@ -1,7 +1,9 @@
 """What the agent that acts on my review should do: list the comments, and answer them.
 
 A comment is something to do when it is open and either I wrote it, or it is a persona's finding
-that I marked "address". Findings I haven't answered, and ones I dismissed, are left alone.
+that I marked "address" (replying to one marks it so). Findings I haven't answered, and ones I
+dismissed, are left alone. Replies are listed oldest first, each with who it is `from`: "me" for
+mine, else the agent's name.
 """
 
 from __future__ import annotations
@@ -9,7 +11,7 @@ from __future__ import annotations
 from typing import Any
 
 from dev_hub.diffs import git
-from dev_hub.diffs.store import add_reply, list_comments
+from dev_hub.diffs.store import ME, add_reply, list_comments
 from dev_hub.review.prepare import describe
 
 
@@ -32,7 +34,14 @@ def todo(branch: str) -> dict[str, Any]:
                 "lines": [target["start"], target["end"]],
                 "quote": target["quote"],
                 "text": comment["text"],
-                "replies": comment.get("replies", []),
+                "replies": [
+                    {
+                        "from": "me" if r.get("author") == ME else r.get("author"),
+                        "text": r["text"],
+                        "commit": r.get("commit"),
+                    }
+                    for r in comment.get("replies", [])
+                ],
             }
         )
     return {"branch": branch, "items": items}

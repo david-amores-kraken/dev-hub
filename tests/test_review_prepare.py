@@ -7,7 +7,7 @@ import pytest
 from helpers import fake_review_helpers, git
 
 from dev_hub.diffs.git import list_commits
-from dev_hub.diffs.store import add_comment, add_review, save_description
+from dev_hub.diffs.store import add_comment, add_my_reply, add_review, save_description
 from dev_hub.review.prepare import prepare
 
 
@@ -118,14 +118,17 @@ def test_earlier_findings_and_my_comments_are_passed_on(
         )  # fmt: skip
     add_review("feature/x", {"persona": "correctness", "sha": one.sha, "verdict": "comments"}, [])
     assert finding
+    add_my_reply("feature/x", finding["id"], "It's fine because X.")
 
     _, folder = run_folder(repo)
     prior = json.loads((folder / "prior-findings.json").read_text())
     assert [(f["id"], f["status"], f["where"]) for f in prior["findings"]] == [
         ("CR-1", "endorsed", "one.txt:1"),
         ("CR-2", "rejected", "one.txt:1"),
-        ("CR-3", "pending", "one.txt:1"),
+        ("CR-3", "endorsed", "one.txt:1"),  # my reply marked it "address"
     ]
+    assert prior["findings"][2]["user_replies"] == ["It's fine because X."]
+    assert not prior["findings"][2]["addressed"]
     assert prior["reviews"][0]["persona"] == "correctness"
     mine = json.loads((folder / "user-comments.json").read_text())
     assert [(c["path"], c["line"], c["body"]) for c in mine] == [

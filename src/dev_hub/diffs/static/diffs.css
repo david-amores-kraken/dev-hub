@@ -83,6 +83,8 @@ form.editor .controls { margin: 6px 0 0; gap: 6px; }
 .comment[data-severity="should-fix"] { border-left-color: var(--skim); }
 .comment.dismissed { opacity: .45; }
 .comment .reply { margin: 6px 0 0 12px; padding-left: 10px; border-left: 2px solid var(--line); }
+.comment .reply.mine { border-left-color: var(--accent); }
+.comment form.editor.reply { border-width: 1px; border-left: 2px solid var(--accent); border-radius: 0 6px 6px 0; }
 .reviews { display: flex; flex-direction: column; gap: 8px; margin: 8px 0 16px; }
 details.review { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 6px 12px; }
 details.review summary { font-weight: 600; }

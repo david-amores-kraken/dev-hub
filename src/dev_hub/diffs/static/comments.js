@@ -314,15 +314,16 @@ function start(review) {
       return el;
     }
     el.append(markdown(comment));
-    for (const reply of comment.replies ?? []) {
-      const answer = document.createElement("div");
-      answer.className = "reply";
-      const by = document.createElement("div");
-      by.className = "meta";
-      by.textContent = [reply.author, reply.commit ? `in ${reply.commit}` : null, reply.created.slice(0, 16).replace("T", " ")]
-        .filter(Boolean).join(" · ");
-      answer.append(by, markdown(reply));
-      el.append(answer);
+    for (const reply of comment.replies ?? []) el.append(replyCard(comment, reply, key));
+    if (editing.has(`${key}:reply`)) {
+      const { box, textarea } = editor("Reply", "Cancel", async text => {
+        replace(await post(`${base}/${comment.id}/replies`, { text }));
+        editing.delete(`${key}:reply`);
+        render();
+      }, () => { editing.delete(`${key}:reply`); render(); });
+      box.classList.add("reply");
+      el.append(box);
+      queueMicrotask(() => textarea.focus());
     }
     const actions = document.createElement("div");
     actions.className = "controls";
@@ -337,6 +338,9 @@ function start(review) {
         actions.append(mark);
       }
     }
+    const answer = button("Reply", "plain");
+    answer.addEventListener("click", () => { editing.add(`${key}:reply`); render(); });
+    actions.append(answer);
     const resolve = button(comment.status === "open" ? "Resolve" : "Reopen", "plain");
     resolve.addEventListener("click", () => act(async () => {
       replace(await post(`${base}/${comment.id}`, { status: comment.status === "open" ? "resolved" : "open" }));
@@ -350,8 +354,48 @@ function start(review) {
       comments = comments.filter(c => c.id !== comment.id);
       pinned = pinned.filter(c => c.id !== comment.id);
     }));
-    actions.append(resolve, edit, remove);
+    // A finding is the persona's words: answer it with a reply instead of editing it.
+    actions.append(resolve, ...(comment.finding_id ? [] : [edit]), remove);
     el.append(actions);
+    return el;
+  }
+
+  // A reply under a comment. Mine can be edited and deleted; the agent's can't.
+  function replyCard(comment, reply, key) {
+    const mine = reply.author === "me";
+    const el = document.createElement("div");
+    el.className = "reply" + (mine ? " mine" : "");
+    const by = document.createElement("div");
+    by.className = "meta";
+    by.textContent = [mine ? "You" : reply.author, reply.commit ? `in ${reply.commit}` : null, reply.created.slice(0, 16).replace("T", " ")]
+      .filter(Boolean).join(" · ");
+    el.append(by);
+    const url = `${base}/${comment.id}/replies/${reply.id}`;
+    const editKey = `${key}:reply:${reply.id}`;
+    if (mine && editing.has(editKey)) {
+      const { box, textarea } = editor("Save", "Cancel", async text => {
+        replace(await post(url, { text }));
+        editing.delete(editKey);
+        render();
+      }, () => { editing.delete(editKey); render(); }, reply.text);
+      el.append(box);
+      queueMicrotask(() => textarea.focus());
+      return el;
+    }
+    el.append(markdown(reply));
+    if (mine && reply.id) {
+      const actions = document.createElement("div");
+      actions.className = "controls";
+      const edit = button("Edit", "plain");
+      edit.addEventListener("click", () => { editing.add(editKey); render(); });
+      const remove = button("Delete", "plain");
+      remove.addEventListener("click", () => act(async () => {
+        if (!confirm("Delete this reply?")) return;
+        replace(await post(`${url}/delete`, {}));
+      }));
+      actions.append(edit, remove);
+      el.append(actions);
+    }
     return el;
   }
 
