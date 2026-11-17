@@ -95,6 +95,32 @@ the folder and take the findings:
   goes next to it as `<slug>.feedback.md`.
 - The Kraken helpers the preparation step needs are loaded from `~/.claude/lib/review_context.py`.
 
+## Setting it up on another machine
+
+The repo is only the hub. These live outside it and need setting up by hand:
+
+- **Clone location.** Clone to `~/Code/dev-hub`. `pyproject.toml` finds the `pr-brief` package and
+  `~/.claude/lib` by relative paths (`../../.claude/...`), so `uv sync` and `ty` fail anywhere else.
+- **Tools.** `uv`, `git`, and Claude Code. The `pr-brief` skill also uses `gh`, logged in to GitHub.
+- **The `pr-brief` skill** in `~/.claude/skills/pr-brief`. It isn't in git, so it has to be copied
+  across. Its `config.json` has machine paths (`main_repo`, `claude`, `with_1password`) and the
+  reviewer groups to watch. Its poller runs from its own launchd job (`com.davidamores.pr-brief`).
+- **The review helpers** in `~/.claude/lib/review_context.py`, which the Diffs review commands load.
+- **For persona reviews** (`dev_hub.review`):
+  - the persona agents in `~/.claude/agents` (`review-*.md`),
+  - the `local-review` skill, linked from this repo (see its Setup section),
+  - optionally `comment-preferences.md`, `commit-message-preferences.md` and
+    `pr-description-preferences.md` in `~/.claude`, which `prepare` hands to the personas.
+- **The `feature` skill** in `~/.claude/skills/feature`. It writes `~/Plans` and `~/Reports`, so
+  without it the Plans and Features sections stay empty.
+- **A kraken-core clone** at `~/Code/kraken-core` (or set `DEV_HUB_REPO`), with `origin/master`
+  fetched.
+- **The launchd job.** The plist isn't in the repo. Copy it to `~/Library/LaunchAgents`, then edit
+  its label, `ProgramArguments`, `WorkingDirectory`, `HOME`, `PATH` and log paths, which all name
+  this machine's user. Load it with `launchctl bootstrap gui/$(id -u) <plist>`.
+- **Hard-coded paths.** `skills/local-review/SKILL.md`, the `feature` skill and the permission rule
+  in `~/.claude/settings.json` use my absolute home path. Change them to the new home folder.
+
 ## Running it
 
 It starts at login through launchd (`~/Library/LaunchAgents/com.davidamores.dev-hub.plist`, logs in
