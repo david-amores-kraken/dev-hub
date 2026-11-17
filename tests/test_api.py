@@ -213,3 +213,12 @@ def test_page_files_names_each_file_and_the_lines_a_comment_can_go_on() -> None:
         },
         {"path": "logo.png", "old_path": "", "status": "added", "lines": {"old": [], "new": []}},
     ]
+
+
+def test_the_diff_and_feature_pages_link_to_the_branch_in_vs_code(
+    repo: Path, plans: Path, client: FlaskClient, base_url: str
+) -> None:
+    (plans / "feature-x.html").write_text("<html><head><title>Do X</title></head></html>")
+    link = "vscode://local.dev-hub-review/open?branch=feature%2Fx"
+    for url in ("/diffs/feature/x", "/features/feature-x"):
+        assert link in client.get(url, base_url=base_url).get_data(as_text=True), url

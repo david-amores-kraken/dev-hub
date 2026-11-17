@@ -18,6 +18,7 @@ from dev_hub.config import HOST, PORT
 from dev_hub.diffs import blueprint as diffs
 from dev_hub.features import blueprint as features
 from dev_hub.plans import blueprint as plans
+from dev_hub.vscode import open_link
 from pr_brief.web import blueprint as prs
 
 # (nav label, blueprint, URL prefix), in nav order.
@@ -33,6 +34,7 @@ def create_app() -> Flask:
     app = Flask(__name__)
     app.jinja_env.trim_blocks = True
     app.jinja_env.lstrip_blocks = True
+    app.add_template_global(open_link, "vscode_link")
     own_hosts = {f"{HOST}:{PORT}", f"localhost:{PORT}"}
     own_origins = {f"http://{host}" for host in own_hosts}
 
