@@ -1,0 +1,84 @@
+{
+  "name": "dev-hub-review-poc",
+  "displayName": "Dev Hub review (proof of concept)",
+  "description": "Read a local branch commit by commit in VS Code's diff editor, and comment on lines. Comments are kept in memory only.",
+  "version": "0.0.1",
+  "publisher": "local",
+  "private": true,
+  "license": "UNLICENSED",
+  "engines": { "vscode": "^1.90.0" },
+  "main": "./extension.js",
+  "activationEvents": ["onUri"],
+  "contributes": {
+    "configuration": {
+      "title": "Dev Hub review",
+      "properties": {
+        "devHubReview.repo": {
+          "type": "string",
+          "default": "~/Code/kraken-core",
+          "description": "The repo whose branches are reviewed."
+        },
+        "devHubReview.base": {
+          "type": "string",
+          "default": "origin/master",
+          "description": "What a branch is compared with, as the hub's DEV_HUB_BASE."
+        }
+      }
+    },
+    "viewsContainers": {
+      "activitybar": [
+        { "id": "devHubReview", "title": "Dev Hub review", "icon": "media/review.svg" }
+      ]
+    },
+    "views": {
+      "devHubReview": [{ "id": "devHubReview.commits", "name": "Branch" }]
+    },
+    "commands": [
+      { "command": "devHubReview.pickBranch", "title": "Pick a branch to review", "category": "Dev Hub", "icon": "$(git-branch)" },
+      { "command": "devHubReview.refresh", "title": "Refresh", "category": "Dev Hub", "icon": "$(refresh)" },
+      { "command": "devHubReview.createNote", "title": "Add comment" },
+      { "command": "devHubReview.replyNote", "title": "Reply" },
+      { "command": "devHubReview.editNote", "title": "Edit", "icon": "$(edit)" },
+      { "command": "devHubReview.deleteNote", "title": "Delete", "icon": "$(trash)" },
+      { "command": "devHubReview.saveNote", "title": "Save" },
+      { "command": "devHubReview.cancelSaveNote", "title": "Cancel" },
+      { "command": "devHubReview.resolveThread", "title": "Resolve", "icon": "$(check)" },
+      { "command": "devHubReview.reopenThread", "title": "Reopen", "icon": "$(issue-reopened)" },
+      { "command": "devHubReview.deleteThread", "title": "Delete thread", "icon": "$(trash)" }
+    ],
+    "menus": {
+      "view/title": [
+        { "command": "devHubReview.pickBranch", "when": "view == devHubReview.commits", "group": "navigation@1" },
+        { "command": "devHubReview.refresh", "when": "view == devHubReview.commits", "group": "navigation@2" }
+      ],
+      "commandPalette": [
+        { "command": "devHubReview.createNote", "when": "false" },
+        { "command": "devHubReview.replyNote", "when": "false" },
+        { "command": "devHubReview.editNote", "when": "false" },
+        { "command": "devHubReview.deleteNote", "when": "false" },
+        { "command": "devHubReview.saveNote", "when": "false" },
+        { "command": "devHubReview.cancelSaveNote", "when": "false" },
+        { "command": "devHubReview.resolveThread", "when": "false" },
+        { "command": "devHubReview.reopenThread", "when": "false" },
+        { "command": "devHubReview.deleteThread", "when": "false" }
+      ],
+      "comments/commentThread/context": [
+        { "command": "devHubReview.createNote", "group": "inline", "when": "commentController == devhub-review && commentThreadIsEmpty" },
+        { "command": "devHubReview.replyNote", "group": "inline", "when": "commentController == devhub-review && !commentThreadIsEmpty" }
+      ],
+      "comments/commentThread/title": [
+        { "command": "devHubReview.resolveThread", "group": "navigation@1", "when": "commentController == devhub-review && commentThread == unresolved" },
+        { "command": "devHubReview.reopenThread", "group": "navigation@1", "when": "commentController == devhub-review && commentThread == resolved" },
+        { "command": "devHubReview.deleteThread", "group": "navigation@2", "when": "commentController == devhub-review && !commentThreadIsEmpty" }
+      ],
+      "comments/comment/title": [
+        { "command": "devHubReview.editNote", "group": "inline@1", "when": "commentController == devhub-review" },
+        { "command": "devHubReview.deleteNote", "group": "inline@2", "when": "commentController == devhub-review" }
+      ],
+      "comments/comment/context": [
+        { "command": "devHubReview.cancelSaveNote", "group": "inline@1", "when": "commentController == devhub-review" },
+        { "command": "devHubReview.saveNote", "group": "inline@2", "when": "commentController == devhub-review" }
+      ]
+    }
+  }
+}
