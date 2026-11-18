@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from os.path import commonpath
 from pathlib import Path
 
-from dev_hub.prs.config import load as load_config
+from dev_hub.config import hub_url
 from dev_hub.prs.text import REF_RE
 from dev_hub.review_context import run
 
@@ -51,7 +51,7 @@ def main() -> None:
 
 
 def report_url(pr: int, run: str) -> str:
-    return f"{load_config()['hub_url']}/prs/{pr}/{run}"
+    return f"{hub_url()}/prs/{pr}/{run}"
 
 
 def assemble(run_dir: Path) -> dict:

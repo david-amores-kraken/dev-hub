@@ -9,6 +9,11 @@ HOST = "127.0.0.1"
 PORT = int(os.environ.get("DEV_HUB_PORT", "8765"))
 
 
+def hub_url() -> str:
+    """Where the hub's pages are, for links printed by the review commands and the poller."""
+    return f"http://{HOST}:{PORT}"
+
+
 def plans_dir() -> Path:
     """Where the feature skill saves plans (and their index.html)."""
     return Path(os.environ.get("DEV_HUB_PLANS") or Path.home() / "Plans")

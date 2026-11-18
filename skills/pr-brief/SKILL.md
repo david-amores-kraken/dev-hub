@@ -154,7 +154,7 @@ its `AGENTS.md`).
 - `reference/brief.md`: the pr-brief rules every persona follows, and the JSON they write.
   It's copied into the run folder, and it overrides the local-review parts of the agent files.
 - `~/pr-reviews/config.json`: the tier thresholds, spending caps, review groups,
-  `auto_brief_authors` and `hub_url`. `config.example.json` shows every key.
+  `auto_brief_authors` and the team. `config.example.json` shows every key.
 - `src/dev_hub/prs/` in the repo:
   - `prepare.py`, `facts.py`: gather the PR and its mechanical facts.
   - `tiers.py`: the tier a PR gets, and the one suggested from its size.

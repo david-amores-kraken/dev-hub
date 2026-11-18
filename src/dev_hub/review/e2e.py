@@ -16,7 +16,7 @@ import json
 import re
 from pathlib import Path
 
-from dev_hub.config import HOST, PORT, e2e_dir, repo_dir
+from dev_hub.config import e2e_dir, hub_url, repo_dir
 from dev_hub.diffs import git
 from dev_hub.features.store import slug_of
 from dev_hub.files import write_atomic
@@ -66,7 +66,7 @@ def publish(
     saved = f"published {target}" + (
         f" and the feedback {target.with_suffix('.feedback.md')}" if notes else ""
     )
-    return f"{saved}\nhttp://{HOST}:{PORT}/features/{slug}?tab=e2e"
+    return f"{saved}\n{hub_url()}/features/{slug}?tab=e2e"
 
 
 def run_id(slug: str) -> str:

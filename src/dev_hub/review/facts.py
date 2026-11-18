@@ -11,7 +11,7 @@ from typing import Any
 
 from dev_hub.diffs import git
 from dev_hub.diffs.store import list_comments, load_description
-from dev_hub.review.prepare import hub_url
+from dev_hub.review.prepare import diff_url
 from dev_hub.review_context import is_test
 
 # Comments within this many minutes of each other belong to one round of review.
@@ -29,7 +29,7 @@ def facts(branch: str) -> dict[str, Any]:
     return {
         "pr": {
             "number": None,
-            "url": hub_url(branch),
+            "url": diff_url(branch),
             "title": description.title or branch,
             "state": "local",
             "body": description.body,

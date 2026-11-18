@@ -25,7 +25,7 @@ from dev_hub.diffs.anchors import Row, parse_patch
 from dev_hub.diffs.comments import MAX_QUOTE, parse_target
 from dev_hub.diffs.store import add_comment, add_review, list_comments, load_description
 from dev_hub.review.personas import PERSONAS
-from dev_hub.review.prepare import hub_url
+from dev_hub.review.prepare import diff_url
 
 SEVERITIES = ("blocker", "should-fix", "nit")
 COMMIT_RE = re.compile(r"\bcommit\s+([0-9a-f]{7,40})\b", re.IGNORECASE)
@@ -115,7 +115,7 @@ def post(run_dir: Path, persona: str, dry_run: bool = False) -> str:
     add_review(branch, review, review["resolved"])
     receipt.parent.mkdir(exist_ok=True)
     receipt.write_text(json.dumps({"placed": len(placed), "unplaced": len(unplaced)}))
-    return f"{name}: {status} — {hub_url(branch)}"
+    return f"{name}: {status} — {diff_url(branch)}"
 
 
 def _load(run_dir: Path, persona: str) -> dict[str, Any]:

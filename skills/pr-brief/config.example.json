@@ -1,10 +1,8 @@
 {
   "repo": "octoenergy/kraken-core",
-  "main_repo": "/Users/you/Code/kraken-core",
   "claude": "/Users/you/.local/bin/claude",
   "with_1password": "/Users/you/.claude/with1pass",
   "auto_brief_authors": [],
-  "hub_url": "http://127.0.0.1:8765",
   "reviewer_groups": [
     "octoenergy/your-team"
   ],

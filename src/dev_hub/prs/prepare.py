@@ -24,6 +24,8 @@ from dev_hub.prs.config import load as load_config
 from dev_hub.prs.facts import file_facts, summarise
 from dev_hub.prs.store import RUNS, WORKTREES
 from dev_hub.prs.tiers import TIERS, choose_tier
+from dev_hub.review import personas as review_personas
+from dev_hub.review.personas import USER_FACING_PERSONAS
 from dev_hub.review_context import (
     Refused,
     asana_tasks,
@@ -38,17 +40,9 @@ from dev_hub.review_context import (
 
 # Per-commit facts mean one diff per commit; past this, only the whole-PR facts are worked out.
 MAX_COMMITS_WITH_FACTS = 60
-PERSONAS = (
-    "domain",
-    "correctness",
-    "cross-client",
-    "tests",
-    "conventions",
-    "naming",
-    "ux",
-)
-# Personas that run only when the PR changes something an end user sees.
-USER_FACING_PERSONAS = ("ux",)
+# The local-review personas except Writing. In a brief, the Domain persona checks the PR text
+# against the code instead (see skills/pr-brief/reference/brief.md).
+PERSONAS = tuple(p for p in review_personas.PERSONAS if p != "writing")
 # Who reviews at each tier: nobody for a PR where every change is mechanical, one general
 # reviewer for a small safe PR, and the specialised personas for everything else.
 TIER_PERSONAS = {"note": (), "light": ("general",)}
