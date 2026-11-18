@@ -20,6 +20,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from dev_hub.files import write_atomic
+
 # PR_BRIEF_HOME lets the hub's tests keep their data apart from the real folder.
 HOME = Path(os.environ.get("PR_BRIEF_HOME") or Path.home() / "pr-reviews")
 RUNS = HOME / "runs"
@@ -40,11 +42,7 @@ def now() -> str:
 
 
 def write_json(path: Path, data: object) -> None:
-    """Write atomically, so a reader never sees half a file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_suffix(f".{os.getpid()}.tmp")
-    tmp.write_text(json.dumps(data, indent=1))
-    os.replace(tmp, path)
+    write_atomic(path, json.dumps(data, indent=1))
 
 
 def read_json(path: Path, default: Any) -> Any:
