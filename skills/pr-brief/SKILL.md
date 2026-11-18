@@ -15,6 +15,17 @@ personas review it in pr-brief mode: they write JSON instead of posting. `assemb
 findings, works out which commits deserve the user's time, and writes `report.json`. The dev hub
 (http://127.0.0.1:8765/prs/) renders it.
 
+## Setup (once)
+
+Not done by the repo itself, because it changes `~/.claude` and launchd:
+
+1. Link the skill: `ln -s ~/Code/dev-hub/skills/pr-brief ~/.claude/skills/pr-brief`.
+2. Copy `config.example.json` to `~/pr-reviews/config.json` and fill it in.
+3. `uv sync` in `~/Code/dev-hub`, so that python exists.
+4. The poller's launchd job (`com.davidamores.pr-brief`) runs
+   `/Users/davidamores/Code/dev-hub/.venv/bin/python -m dev_hub.prs.poll` every 15 minutes from
+   the kraken-core checkout.
+
 ## Rules
 
 - **Never post anything** to GitHub, Asana or Slack, and never approve or request changes.
@@ -33,7 +44,7 @@ findings, works out which commits deserve the user's time, and writes `report.js
 ### 1. Prepare the run
 
 ```bash
-/Users/davidamores/.claude/skills/pr-brief/.venv/bin/python -m pr_brief.prepare <pr> [--again] [--tier note|light|standard|large]
+/Users/davidamores/Code/dev-hub/.venv/bin/python -m dev_hub.prs.prepare <pr> [--again] [--tier note|light|standard|large]
 ```
 
 **If your instructions say the poller already prepared the run, skip this step** and use the run
@@ -81,7 +92,7 @@ Wait for all of them.
 ### 3. Assemble and render
 
 ```bash
-/Users/davidamores/.claude/skills/pr-brief/.venv/bin/python -m pr_brief.assemble <run folder>
+/Users/davidamores/Code/dev-hub/.venv/bin/python -m dev_hub.prs.assemble <run folder>
 ```
 
 It writes `report.json` in the run folder and prints the brief's URL. The report has four parts:
@@ -126,7 +137,7 @@ failed, say which.
 Anything risky (a migration, raw SQL, a transaction, permissions, settings) rules out light,
 whatever the size. A different tier can be forced with `--tier`: the index page's Brief button
 does this with the level the user picks. The page suggests one from the PR's size alone
-(`suggest_tier` in `config.py`) and explains each level under "What each review level does".
+(`suggest_tier` in `tiers.py`) and explains each level under "What each review level does".
 
 ## Cost
 
@@ -136,14 +147,15 @@ report shows it under Run. The caps are deliberately high until there is real da
 
 ## Files
 
-The skill is a small Python project (`pyproject.toml`, managed with `uv`; `uv sync` builds `.venv`).
-Check it with `uv run ruff check . && uv run ruff format --check . && uv run ty check && uv run pytest`.
+The code is the `dev_hub.prs` package in `~/Code/dev-hub`, checked with the rest of the hub (see
+its `AGENTS.md`).
 
 - `~/.claude/agents/review-*.md`: what each persona reviews. They're shared with local-review.
 - `reference/brief.md`: the pr-brief rules every persona follows, and the JSON they write.
   It's copied into the run folder, and it overrides the local-review parts of the agent files.
-- `config.json`: the tier thresholds, spending caps, review groups, `auto_brief_authors` and `hub_url`.
-- `src/pr_brief/`
+- `~/pr-reviews/config.json`: the tier thresholds, spending caps, review groups,
+  `auto_brief_authors` and `hub_url`. `config.example.json` shows every key.
+- `src/dev_hub/prs/` in the repo:
   - `prepare.py`, `facts.py`: gather the PR and its mechanical facts.
   - `tiers.py`: the tier a PR gets, and the one suggested from its size.
   - `assemble.py`: merge the personas' output into `report.json`.
@@ -153,12 +165,12 @@ Check it with `uv run ruff check . && uv run ruff format --check . && uv run ty 
     through `reviewer_groups`) and runs each queued request headlessly. PRs by
     `auto_brief_authors` are briefed without a request.
   - `store.py`: the files under `~/pr-reviews` (queue, requests, marks, history, runs).
-  - `web/`: the PR section of the dev hub, as a Flask blueprint (`~/Code/dev-hub` serves it at
+  - `views.py`: the PR section of the dev hub, as a Flask blueprint (served at
     http://127.0.0.1:8765/prs/, from launchd `com.davidamores.dev-hub`). `templates/` and `static/`
     hold the HTML, CSS and JS; `rows.py` builds the one table of PRs; `report.py` holds the filters
     the brief page uses. The Brief button posts the PR and the tier, which becomes
     `~/pr-reviews/requests/<pr>.json` and starts `poll --requests-only`. The hub does the host and
     origin checks, because a brief costs money; don't serve this blueprint any other way.
-- `~/.claude/lib/review_context.py`: helpers shared with local-review.
+- `src/dev_hub/review_context.py`: helpers shared with local-review.
 - `~/pr-reviews/`: `runs/pr<n>/<time>-<sha>/` per brief, `worktrees/pr<n>` (the PR's code, large),
   `marks.json` (reviewed or won't review), `history.json` (briefs removed to save space).

@@ -5,7 +5,7 @@ section per tool:
 
 | Section | URL | What it shows | Lives in |
 |---|---|---|---|
-| PRs | `/prs/` | PRs waiting for my review, and the briefs made for them | the `pr-brief` skill (`~/.claude/skills/pr-brief`) |
+| PRs | `/prs/` | PRs waiting for my review, and the briefs made for them | `src/dev_hub/prs` |
 | Features | `/features/` | One page per feature, with its plan, report and e2e results as tabs, and a link to its diff | `src/dev_hub/features` |
 | Diffs | `/diffs/` | A branch of kraken-core commit by commit, with a PR title and body to write | `src/dev_hub/diffs` |
 | Plans | `/plans/` | Plans the `feature` skill saved in `~/Plans` | `src/dev_hub/plans` |
@@ -17,9 +17,9 @@ reads everything from the hub's JSON API (`/api`, in `src/dev_hub/api`). See its
 
 - `src/dev_hub/app.py` builds the Flask app. It owns the safety checks, the nav and the URL prefix
   of each section. A section is a Flask blueprint.
-- The PR section is a blueprint exported by the `pr-brief` package, which stays under
-  `~/.claude/skills/pr-brief` because its `SKILL.md`, poller and CLI belong to the skill. The hub
-  depends on it (`[tool.uv.sources]` in `pyproject.toml`); it doesn't depend on the hub.
+- Two skills live in `skills/` and are linked into `~/.claude/skills`: `local-review`, whose
+  commands are `dev_hub.review`, and `pr-brief`, whose commands and poller are `dev_hub.prs`.
+  `dev_hub.review_context` has the helpers both of them use.
 - Sections extend `templates/base.html`, which has the blocks `title`, `head`, `content`, `scripts`.
   `static/hub.css` has the shared look; a section adds its own CSS next to its templates.
 - Data stays where its tool writes it (`~/pr-reviews`, `~/Plans`, `~/Reports`, `~/E2E`). The only data the hub owns is what I write in the Diffs section (PR title and body, comments), in `~/Reviews`.
@@ -107,19 +107,18 @@ the folder and take the findings:
 - `e2e publish <branch> <page>` saves an e2e-verify results page as the feature's E2E tab, with the
   screenshots embedded, at `~/E2E/<slug>.html` (`DEV_HUB_E2E` changes the folder). Skill feedback
   goes next to it as `<slug>.feedback.md`.
-- The Kraken helpers the preparation step needs are loaded from `~/.claude/lib/review_context.py`.
+- The Kraken helpers the preparation step needs are in `dev_hub.review_context`.
 
 ## Setting it up on another machine
 
 The repo is only the hub. These live outside it and need setting up by hand:
 
-- **Clone location.** Clone to `~/Code/dev-hub`. `pyproject.toml` finds the `pr-brief` package and
-  `~/.claude/lib` by relative paths (`../../.claude/...`), so `uv sync` and `ty` fail anywhere else.
+- **Clone location.** Clone to `~/Code/dev-hub`. The skills and launchd jobs use that path.
 - **Tools.** `uv`, `git`, and Claude Code. The `pr-brief` skill also uses `gh`, logged in to GitHub.
-- **The `pr-brief` skill** in `~/.claude/skills/pr-brief`. It isn't in git, so it has to be copied
-  across. Its `config.json` has machine paths (`main_repo`, `claude`, `with_1password`) and the
-  reviewer groups to watch. Its poller runs from its own launchd job (`com.davidamores.pr-brief`).
-- **The review helpers** in `~/.claude/lib/review_context.py`, which the Diffs review commands load.
+- **The `pr-brief` skill**, linked from this repo (see its Setup section). Its config is
+  `~/pr-reviews/config.json`, copied from `skills/pr-brief/config.example.json`: it has machine
+  paths (`main_repo`, `claude`, `with_1password`) and the reviewer groups to watch. Its poller runs
+  from its own launchd job (`com.davidamores.pr-brief`).
 - **For persona reviews** (`dev_hub.review`):
   - the persona agents in `~/.claude/agents` (`review-*.md`),
   - the `local-review` skill, linked from this repo (see its Setup section),
@@ -132,8 +131,9 @@ The repo is only the hub. These live outside it and need setting up by hand:
 - **The launchd job.** The plist isn't in the repo. Copy it to `~/Library/LaunchAgents`, then edit
   its label, `ProgramArguments`, `WorkingDirectory`, `HOME`, `PATH` and log paths, which all name
   this machine's user. Load it with `launchctl bootstrap gui/$(id -u) <plist>`.
-- **Hard-coded paths.** `skills/local-review/SKILL.md`, the `feature` skill and the permission rule
-  in `~/.claude/settings.json` use my absolute home path. Change them to the new home folder.
+- **Hard-coded paths.** `skills/local-review/SKILL.md`, `skills/pr-brief/SKILL.md`, the `feature`
+  skill and the permission rule in `~/.claude/settings.json` use my absolute home path. Change
+  them to the new home folder.
 
 ## Running it
 
@@ -147,11 +147,9 @@ launchctl kickstart -k gui/$(id -u)/com.davidamores.dev-hub   # restart the laun
 uv run ruff check . && uv run ruff format --check . && uv run ty check && uv run pytest
 ```
 
-GitHub Actions runs the same checks on every PR (`.github/workflows/ci.yml`). The `pr-brief` package
-only exists on my machine, so CI installs a small stand-in from `.github/ci/pr-brief`. If the PR
-section's tests start to need more of the real one, grow the stand-in.
+GitHub Actions runs the same checks on every PR (`.github/workflows/ci.yml`).
 
-`DEV_HUB_PORT` changes the port. If you do, set `hub_url` in the pr-brief `config.json` to match.
+`DEV_HUB_PORT` changes the port. If you do, set `hub_url` in `~/pr-reviews/config.json` to match.
 
 ## Adding a section
 
