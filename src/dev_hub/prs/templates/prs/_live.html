@@ -1,0 +1,24 @@
+<p class="meta">
+  <span>{{ counts.todo }} waiting for a brief</span>
+  <span>{{ counts.briefed }} briefed</span>
+  <span>{{ counts.done }} done</span>
+  <span id="refreshed">list refreshed {{ refreshed }}</span>
+</p>
+{% if rows %}
+<div class="scroll">
+<table class="index">
+  <thead>
+    <tr><th>PR</th><th>Title</th><th>Author</th>
+    <th class="sortable" data-sort="created" title="Sort by date created">Created</th>
+    <th class="sortable" data-sort="updated" title="Sort by date last updated">Updated</th>
+    <th class="num">Size</th><th>Review level</th>
+    <th>Status</th><th></th></tr>
+  </thead>
+  <tbody>
+  {% for row in rows %}{% set position = loop.index %}{% include "prs/_row.html" %}{% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p class="muted">Nothing yet.</p>
+{% endif %}

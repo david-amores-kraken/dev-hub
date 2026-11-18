@@ -1,0 +1,45 @@
+<h2>Run</h2>
+<p class="meta">Tier: {{ meta.get("tier", "standard") }} ({{ meta.get("tier_reason", "") }})</p>
+{% set cost = view.cost %}
+{% if not cost %}
+<p class="meta">Spend and time: not recorded for this brief.</p>
+{% else %}
+<details>
+  <summary>Took {{ cost.total_seconds | duration }} · estimated spend ${{ "%.2f" | format(cost.total_usd) }}</summary>
+  <p class="meta">Took {{ cost.total_seconds | duration }} in all: {{ cost.prepare_seconds | duration }} preparing,
+    {{ cost.session_seconds | duration }} for the review sessions. Spend is estimated from token counts at list prices.
+    {% if cost.reported_usd is not none %}The CLI reported ${{ "%.2f" | format(cost.reported_usd) }}.{% endif %}
+    Agents run side by side, so their times don't add up to the total.</p>
+  <div class="scroll">
+  <table>
+    <tr><th>Agent</th><th class="num">USD</th><th class="num">Time</th></tr>
+    {% for name, usd, seconds in cost.rows %}
+    <tr><td>{{ name }}</td><td class="num">${{ "%.2f" | format(usd) }}</td><td class="num">{{ seconds | duration }}</td></tr>
+    {% endfor %}
+  </table>
+  </div>
+</details>
+{% endif %}
+<p class="meta">Findings per persona:
+  {% for key, a in report.agents.items() %}{{ key }}: {% if a.ran %}{{ a.findings }}{% else %}<strong>failed</strong>{% endif %}{{ " · " if not loop.last }}{% endfor %}</p>
+{% set summaries = report.agents.items() | selectattr("1.summary") | list %}
+{% if summaries %}
+<details><summary>What each persona checked</summary><ul>
+  {% for key, a in summaries %}<li><strong>{{ key }}:</strong> {{ a.summary | rich }}</li>{% endfor %}
+</ul></details>
+{% endif %}
+{% if report.notes.values() | map("length") | sum %}
+<details><summary>Persona notes</summary><ul>
+  {% for key, notes in report.notes.items() %}{% for note in notes %}<li><strong>{{ key }}:</strong> {{ note | rich }}</li>{% endfor %}{% endfor %}
+</ul></details>
+{% endif %}
+{% if report.problems %}
+<details><summary>Problems found while assembling ({{ report.problems | length }})</summary><ul>
+  {% for p in report.problems %}<li>{{ p | rich }}</li>{% endfor %}
+</ul></details>
+{% endif %}
+{% if view.resume %}
+<p>Ask about this brief:</p>
+<pre>{{ view.resume }}</pre>
+{% endif %}
+<p class="meta"><span>Run folder <code>{{ meta.run_dir }}</code></span> <span>Code at <code>{{ meta.worktree }}</code></span></p>

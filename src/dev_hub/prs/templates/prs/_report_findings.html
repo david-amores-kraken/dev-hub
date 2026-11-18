@@ -1,0 +1,54 @@
+{% set findings = report.findings %}
+{% set resolved = report.get("resolved") %}
+<h2>Findings{% if findings %} ({{ findings | length }}){% endif %}</h2>
+{% if not findings %}
+<p class="muted">The personas found nothing to raise.</p>
+{% else %}
+{% if resolved is not none %}
+{% set new = findings | selectattr("status", "equalto", "new") | list | length %}
+<p class="meta">Since the last brief: {{ new }} new, {{ findings | length - new }} still open,
+  {{ resolved.gone | length }} gone.</p>
+{% endif %}
+{% for f in findings %}
+<div class="card sev-{{ f.severity }}">
+  <p>
+    <span class="pill {{ SEVERITY_CLASS[f.severity] }}">{{ SEVERITY_LABELS[f.severity] }}</span>
+    {% if f.get("status") %}<span class="pill {{ STATUS_CLASS[f.status] }}">{{ f.status }}</span>{% endif %}
+    <span class="meta">{{ f.agents | join(", ") }}</span>
+    {% if f.commits %}<span class="meta">in {{ f.commits | join(", ") }}</span>{% endif %}
+    {% if f.already_raised_by %}
+      <span class="pill">already raised by {% for r in f.already_raised_by %}@{{ r }}{{ ", " if not loop.last }}{% endfor %}</span>
+    {% endif %}
+  </p>
+  {% for i in f["items"] %}
+    <p><strong>{{ i.title | rich }}</strong>
+      {% if f["items"] | length > 1 %}
+        <span class="muted">({{ i.agent }}{% if i.severity != f.severity %}, {{ i.severity }}{% endif %})</span>
+      {% endif %}
+    </p>
+    <p>{{ i.body | rich(i.get("links")) }}</p>
+    {% if i.where %}<p class="meta">On: {{ i.where }}</p>{% endif %}
+  {% endfor %}
+  {% if f.locations %}
+    <div class="locs">
+      {% for loc in f.locations %}
+        <a class="mono" href="{{ loc.href }}" title="{{ loc.path }}">{{ loc | short_location }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endif %}
+{% if resolved and resolved.gone %}
+<details>
+  <summary>Gone since the last brief ({{ resolved.gone | length }})</summary>
+  <p class="meta">Raised last time, not this time. Usually fixed: check the ones you cared about.</p>
+  <ul>
+    {% for g in resolved.gone %}
+    <li><strong>{{ g.title | rich }}</strong>
+      <span class="muted">({{ g.agent }}, was {{ SEVERITY_LABELS.get(g.severity, g.severity) }})</span>
+      {% if g.why %}<br>{{ g.why | rich }}{% endif %}</li>
+    {% endfor %}
+  </ul>
+</details>
+{% endif %}

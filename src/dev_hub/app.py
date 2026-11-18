@@ -18,8 +18,8 @@ from dev_hub.config import HOST, PORT
 from dev_hub.diffs import blueprint as diffs
 from dev_hub.features import blueprint as features
 from dev_hub.plans import blueprint as plans
+from dev_hub.prs import blueprint as prs
 from dev_hub.vscode import open_link
-from pr_brief.web import blueprint as prs
 
 # (nav label, blueprint, URL prefix), in nav order.
 SECTIONS = (

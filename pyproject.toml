@@ -7,7 +7,6 @@ dependencies = [
     "emoji>=2.16.0",
     "flask>=3.1",
     "markdown-it-py>=4.3.0",
-    "pr-brief",
 ]
 
 [dependency-groups]
@@ -21,10 +20,6 @@ build-backend = "uv_build"
 module-name = "dev_hub"
 module-root = "src"
 
-[tool.uv.sources]
-# The PR section lives with its skill, which has to stay under ~/.claude/skills.
-pr-brief = { path = "../../.claude/skills/pr-brief", editable = true }
-
 [tool.ruff]
 line-length = 100
 target-version = "py312"
@@ -35,7 +30,7 @@ select = ["E", "F", "W", "I", "UP", "B", "SIM", "RUF"]
 ignore = ["E501", "RUF001", "RUF002", "RUF003"]  # the formatter owns line length; text uses − and ·
 
 [tool.ruff.lint.isort]
-known-first-party = ["dev_hub", "pr_brief"]
+known-first-party = ["dev_hub"]
 
 [tool.ty.environment]
 # review_context.py is shared with the review skills and lives outside both projects.

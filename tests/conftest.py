@@ -3,18 +3,23 @@
 from __future__ import annotations
 
 import os
+import shutil
 import tempfile
 from pathlib import Path
+from typing import Any
 
-# pr_brief reads this when it is first imported, so set it before anything imports pr_brief.
+# dev_hub.prs reads this when it is first imported, so set it before anything imports it.
 os.environ["PR_BRIEF_HOME"] = tempfile.mkdtemp(prefix="dev-hub-test-")
 
 import pytest
 from flask.testing import FlaskClient
 from helpers import commit, git
+from werkzeug.test import TestResponse
 
 from dev_hub.app import create_app
 from dev_hub.config import HOST, PORT
+from dev_hub.prs import rows, store
+from dev_hub.prs.config import EXAMPLE
 
 
 @pytest.fixture(autouse=True)
@@ -23,6 +28,27 @@ def no_real_data(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     repo, plans, reports, e2e results or reviews. The fixtures below replace these."""
     for name in ("REPO", "PLANS", "REPORTS", "E2E", "REVIEWS"):
         monkeypatch.setenv(f"DEV_HUB_{name}", str(tmp_path / f"no-{name.lower()}"))
+
+
+@pytest.fixture(autouse=True)
+def pr_home(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Point the PR section's store at a new folder, with the example config in it."""
+    folder = tmp_path / "pr-reviews"
+    folder.mkdir()
+    monkeypatch.setattr(store, "HOME", folder)
+    for name, sub in {
+        "RUNS": "runs",
+        "QUEUE": "queue.json",
+        "REQUESTS": "requests",
+        "MARKS": "marks.json",
+        "HISTORY": "history.json",
+        "MANUAL": "manual.json",
+    }.items():
+        monkeypatch.setattr(store, name, folder / sub)
+    # rows.py imported this name directly, so patch its copy too.
+    monkeypatch.setattr(rows, "RUNS", folder / "runs")
+    shutil.copy(EXAMPLE, folder / "config.json")
+    return folder
 
 
 @pytest.fixture
@@ -57,6 +83,24 @@ def client(plans: Path, reports: Path, reviews: Path, e2e: Path) -> FlaskClient:
 @pytest.fixture
 def base_url() -> str:
     return f"http://{HOST}:{PORT}"
+
+
+class SameOriginClient(FlaskClient):
+    """Sends every request to the hub's own host and from its own origin, as its pages do."""
+
+    def open(self, *args: Any, **kwargs: Any) -> TestResponse:
+        base = f"http://{HOST}:{PORT}"
+        kwargs.setdefault("base_url", base)
+        kwargs["headers"] = {"Origin": base, **(kwargs.get("headers") or {})}
+        return super().open(*args, **kwargs)
+
+
+@pytest.fixture
+def prs_client(plans: Path, reports: Path, reviews: Path, e2e: Path) -> FlaskClient:
+    """A hub client that passes the host and origin checks, so the PR tests needn't."""
+    app = create_app()
+    app.test_client_class = SameOriginClient
+    return app.test_client()
 
 
 @pytest.fixture

@@ -1,0 +1,22 @@
+<h2>Commits ({{ report.commits | length }})</h2>
+<p class="meta">Focus: read every line. Skim: a quick look. Skip: git proved it can't change behaviour.
+Review one commit at a time in GitHub's commit view.</p>
+<div class="scroll">
+<table>
+  <tr><th>Commit</th><th>What, and why this tier</th><th>Tier</th><th class="num">Lines</th><th class="num">Findings</th></tr>
+  {% for c in report.commits %}
+  <tr>
+    <td><a class="mono sha" href="https://github.com/{{ meta.repo }}/pull/{{ meta.pr }}/commits/{{ c.sha }}">{{ c.short }}</a></td>
+    <td>{{ c.headline }}
+      {% if c.merge %}<span class="pill">merge</span>{% endif %}
+      {% if c.get("new") %}<span class="pill new">new</span>{% endif %}
+      {% if c.get("what") %}<div>{{ c.what | rich(c.get("links")) }}</div>{% endif %}
+      <div class="check">{{ c.reason | rich }}</div>
+    </td>
+    <td><span class="pill {{ c.tier }}">{{ c.tier }}</span></td>
+    <td class="num">{% if c.additions is not none %}+{{ c.additions }} −{{ c.deletions }}{% endif %}</td>
+    <td class="num">{{ c.findings or "" }}</td>
+  </tr>
+  {% endfor %}
+</table>
+</div>

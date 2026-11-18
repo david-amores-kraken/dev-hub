@@ -1,0 +1,57 @@
+{
+  "repo": "octoenergy/kraken-core",
+  "main_repo": "/Users/you/Code/kraken-core",
+  "claude": "/Users/you/.local/bin/claude",
+  "with_1password": "/Users/you/.claude/with1pass",
+  "auto_brief_authors": [],
+  "hub_url": "http://127.0.0.1:8765",
+  "reviewer_groups": [
+    "octoenergy/your-team"
+  ],
+  "tiers": {
+    "light": {
+      "max_substantive_lines": 40,
+      "max_files": 3
+    },
+    "large": {
+      "min_substantive_lines": 600,
+      "min_files": 25
+    }
+  },
+  "risk_signals": [
+    "migration",
+    "data migration",
+    "raw SQL",
+    "transaction",
+    "permissions",
+    "bulk write or delete",
+    "settings file"
+  ],
+  "budget_usd": {
+    "light": 5,
+    "standard": 20,
+    "large": 50
+  },
+  "max_attempts": 3,
+  "timeout_minutes": 60,
+  "prices_usd_per_mtok": {
+    "_note": "List prices used to estimate spend from transcripts. Cache reads cost 0.1x input, cache writes 1.25x.",
+    "opus": {
+      "input": 5,
+      "output": 25
+    },
+    "sonnet": {
+      "input": 3,
+      "output": 15
+    },
+    "haiku": {
+      "input": 1,
+      "output": 5
+    }
+  },
+  "team_name": "My team",
+  "team": [
+    "teammate-one",
+    "teammate-two"
+  ]
+}

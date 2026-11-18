@@ -1,0 +1,10 @@
+<h2>Goal</h2>
+{% if report.goal is none %}
+<p class="muted">No goal was reported.</p>
+{% else %}
+{% set ticket = report.goal.ticket %}
+<p class="lede">{{ report.goal.text | rich(report.goal.get("links")) }}</p>
+<p class="meta"><strong>Ticket:</strong> {{ MATCH_LABELS[ticket.match] }}{% if ticket.tasks %}
+  ({% for task in ticket.tasks %}<a href="{{ task.url }}">{{ task.name or task.id }}</a>{{ ", " if not loop.last }}{% endfor %}){% endif %}.
+  {{ ticket.summary | rich }}</p>
+{% endif %}

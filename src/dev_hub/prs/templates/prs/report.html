@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('prs.static', filename='prs.css') }}">
+{% endblock %}
+{% block title %}PR {{ meta.pr }} brief{% endblock %}
+{% block content %}
+<p class="meta"><a href="{{ url_for('prs.index') }}">All briefs</a></p>
+<h1><a href="{{ meta.url }}">#{{ meta.pr }}</a> {{ meta.title }}</h1>
+<p class="meta">
+  <span>by {{ meta.author }}</span>
+  <span>+{{ meta.additions }} −{{ meta.deletions }}</span>
+  <span>head <code>{{ meta.sha[:7] }}</code></span>
+  <span>{{ view.ci }}</span>
+  <span>{{ view.reviews or "no reviews yet" }}</span>
+  {% if meta.draft %}<span>draft</span>{% endif %}
+  <span>{{ meta.get("tier", "standard") }} tier</span>
+  {% if view.since %}<span>{{ view.since }}</span>{% endif %}
+  <span>brief {{ report.assembled | stamp }}</span>
+</p>
+<p class="banner">Prepared for your review by the review personas. Nothing here was posted.
+Findings are their view, not a verdict: check them against the code. Commit skips are proven by git.</p>
+
+{% include "prs/_report_goal.html" %}
+{% include "prs/_report_findings.html" %}
+{% include "prs/_report_threads.html" %}
+{% include "prs/_report_commits.html" %}
+{% include "prs/_report_run.html" %}
+{% endblock %}
