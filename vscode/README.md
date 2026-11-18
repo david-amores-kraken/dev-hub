@@ -10,6 +10,10 @@ running.
 
 ## What it shows
 
+Pick a branch with the branch button at the top of the view. It lists the local branches with
+commits that `origin/master` doesn't have, and those with a feature (a plan, say), so a feature
+can be opened before its first commit.
+
 The **Dev Hub review** icon in the activity bar shows three groups for the branch:
 
 - **The feature**, under its plan's title: the plan, report and e2e results, the PR description,

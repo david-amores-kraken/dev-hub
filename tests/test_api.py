@@ -30,14 +30,28 @@ def line(commit: str | None, **extra: Any) -> dict[str, Any]:
     } | extra
 
 
-def test_branches_lists_only_those_with_commits_to_review(
+def test_branches_lists_those_with_commits_to_review(
     repo: Path, client: FlaskClient, base_url: str
 ) -> None:
     status, branches = get(client, base_url, "/api/branches")
     assert status == 200
-    assert [(b["name"], b["commits"], b["subject"]) for b in branches] == [
-        ("feature/x", 2, "Add two")
+    assert [(b["name"], b["commits"], b["subject"], b["feature"]) for b in branches] == [
+        ("feature/x", 2, "Add two", False)
     ]
+
+
+def test_branches_lists_one_with_a_feature_before_it_has_commits(
+    repo: Path, plans: Path, client: FlaskClient, base_url: str
+) -> None:
+    git(repo, "branch", "feature/planned", "master")
+    git(repo, "branch", "feature/idle", "master")
+    (plans / "feature-planned.html").write_text("<html><head><title>Plan</title></head></html>")
+    _, branches = get(client, base_url, "/api/branches")
+    listed = {b["name"]: (b["commits"], b["feature"]) for b in branches}
+    assert listed == {"feature/x": (2, False), "feature/planned": (0, True)}
+    status, data = get(client, base_url, "/api/branch", branch="feature/planned")
+    assert (status, data["commits"], data["files"]) == (200, [], {"changes": []})
+    assert [p["key"] for p in data["feature"]["parts"]] == ["plan"]
 
 
 def test_a_branch_has_its_commits_and_the_files_of_each_page(

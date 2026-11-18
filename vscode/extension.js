@@ -17,7 +17,7 @@ const VIEW = "devHubReview.feature";
 const hubUrl = () => vscode.workspace.getConfiguration("devHubReview").get("hubUrl", "http://127.0.0.1:8765");
 
 async function pickBranch(/** @type {Review} */ review) {
-  /** @type {{ name: string, commits: number, updated: string, subject: string }[]} */
+  /** @type {{ name: string, commits: number, updated: string, subject: string, feature: boolean }[]} */
   let branches;
   try {
     branches = await review.hub.get("/api/branches");
@@ -26,8 +26,14 @@ async function pickBranch(/** @type {Review} */ review) {
     return;
   }
   const picked = await vscode.window.showQuickPick(
-    branches.map(b => ({ label: b.name, description: `${b.commits} commits · ${b.updated}`, detail: b.subject })),
-    { placeHolder: "A local branch to review", matchOnDetail: true },
+    branches.map(b => ({
+      label: b.name,
+      description: [b.commits ? `${b.commits} commits · ${b.updated}` : "no commits yet", b.feature ? "feature" : ""]
+        .filter(Boolean)
+        .join(" · "),
+      detail: b.commits ? b.subject : undefined,
+    })),
+    { placeHolder: "A local branch with commits to review, or with a feature", matchOnDetail: true },
   );
   if (picked) await review.setBranch(picked.label);
 }
