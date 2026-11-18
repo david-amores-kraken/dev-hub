@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('prs.static', filename='prs.css') }}">
+{% endblock %}
+{% block content %}
+<h1>PR briefs</h1>
+<p class="meta">Pull requests waiting for your review, and the briefs made for them.</p>
+
+<div class="controls">
+  <label>Show
+    <select id="filter">
+      <option value="open">open (not done)</option>
+      <option value="todo">waiting for a brief</option>
+      <option value="briefed">briefed</option>
+      <option value="done">done</option>
+      <option value="all">everything</option>
+    </select>
+  </label>
+  <label>Author
+    <select id="team">
+      <option value="all">everyone</option>
+      <option value="core">{{ team_name }}</option>
+      <option value="other">everyone else</option>
+    </select>
+  </label>
+  <button class="plain" id="refresh">Refresh list</button>
+  <button class="plain" id="add-toggle" type="button" aria-expanded="false" aria-controls="add-form">Add a PR…</button>
+  <span class="meta" id="message"></span>
+</div>
+<form class="controls" id="add-form" hidden>
+  <input id="add-link" type="text" size="52" autocomplete="off"
+    placeholder="Add a PR to the list: paste its link or number">
+  <button class="plain" type="submit">Add PR</button>
+  <button class="plain" id="add-cancel" type="button">Cancel</button>
+</form>
+
+<div id="live" data-filter="open" data-team="all" data-base="{{ url_for('prs.index') }}">
+{% include "prs/_live.html" %}
+</div>
+
+{% include "prs/_tier_help.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('prs.static', filename='prs.js') }}"></script>
+{% endblock %}

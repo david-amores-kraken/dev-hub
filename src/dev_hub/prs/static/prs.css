@@ -1,0 +1,47 @@
+.lede { font-size: 17px; margin: 8px 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; margin: 8px 0; }
+.card p { margin: 4px 0; }
+.focus { color: var(--focus); background: var(--focus-bg); border-color: transparent; }
+.skim { color: var(--skim); background: var(--skim-bg); border-color: transparent; }
+.skip { color: var(--skip); background: var(--skip-bg); border-color: transparent; }
+.blocker { color: #fff; background: var(--blocker); border-color: transparent; }
+.new { color: var(--accent); border-color: var(--accent); }
+ul.threads li { margin: 6px 0; }
+.card.sev-blocker { border-left: 4px solid var(--blocker); }
+.card.sev-should-fix { border-left: 4px solid var(--focus); }
+.card.sev-question { border-left: 4px solid var(--skim); }
+table.index { overflow-wrap: normal; }
+main:has(table.index) { max-width: 1480px; }
+table.index td:nth-child(2) { min-width: 22em; }
+td.older a { white-space: nowrap; overflow-wrap: normal; margin-right: 8px; }
+td.pr { white-space: nowrap; min-width: 5em; }
+td a.sha { white-space: nowrap; overflow-wrap: normal; }
+.locs { font-size: 13px; }
+.locs a { margin-right: 8px; white-space: nowrap; }
+.check { font-size: 13px; color: var(--muted); }
+.banner { font-size: 13px; color: var(--muted); border-left: 3px solid var(--accent); padding: 4px 10px; margin: 14px 0; }
+@media (max-width: 640px) { .hide-narrow { display: none; } }
+
+/* The index: one table, filtered by data-filter on #live. */
+#live[data-filter="open"] tbody tr[data-group="done"],
+#live[data-filter="todo"] tbody tr:not([data-group="todo"]),
+#live[data-filter="briefed"] tbody tr:not([data-group="briefed"]),
+#live[data-filter="done"] tbody tr:not([data-group="done"]) { display: none; }
+tr[data-group="done"] td:not(.actions) { opacity: .55; }
+td.actions { white-space: nowrap; }
+.status { white-space: nowrap; }
+.status .meta { margin-top: 2px; }
+.tier-help td:first-child { white-space: nowrap; font-weight: 600; }
+.pill.queued, .pill.running { color: var(--accent); border-color: var(--accent); }
+.pill.failed { color: var(--blocker); border-color: var(--blocker); }
+.pill.briefed { color: var(--skip); background: var(--skip-bg); border-color: transparent; }
+#live[data-team="core"] tbody tr[data-team="other"],
+#live[data-team="other"] tbody tr[data-team="core"] { display: none; }
+td.author, td.date { white-space: nowrap; }
+th.sortable { cursor: pointer; user-select: none; white-space: nowrap; }
+th.sortable::after { content: " ↕"; color: var(--muted); }
+th.sortable[data-dir="desc"]::after { content: " ▼"; color: inherit; }
+th.sortable[data-dir="asc"]::after { content: " ▲"; color: inherit; }
+
+/* .controls sets display: flex, which would otherwise beat the hidden attribute. */
+#add-form[hidden] { display: none; }

@@ -33,7 +33,7 @@ def commit(folder: Path, name: str, text: str, message: str) -> None:
 
 
 def fake_review_helpers(user_facing: bool = False) -> Any:
-    """A stand-in for ~/.claude/lib/review_context.py, which CI doesn't have."""
+    """A stand-in for dev_hub.review_context, so a test decides what it finds."""
     from types import SimpleNamespace
 
     from dev_hub.diffs.anchors import parse_patch

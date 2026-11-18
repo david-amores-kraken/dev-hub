@@ -1,0 +1,21 @@
+{% set threads = report.get("threads", {"available": False}) %}
+<h2>Open threads{% if threads.available and threads.open %} ({{ threads.open | length }}){% endif %}</h2>
+{% if not threads.available %}
+<p class="muted">Couldn't load the review threads.</p>
+{% elif not threads.open %}
+<p class="muted">No open threads from other reviewers{% if threads.resolved %} ({{ threads.resolved }} resolved){% endif %}.</p>
+{% else %}
+<p class="meta">Unresolved threads other reviewers started{% if threads.resolved %}, {{ threads.resolved }} resolved{% endif %}.</p>
+<ul class="threads">
+  {% for t in threads.open %}
+  <li>
+    <a href="{{ t.url }}">@{{ t.reviewer }} on <span class="mono">{{ t.path }}{% if t.line %}:{{ t.line }}{% endif %}</span></a>
+    {% if t.author_replied %}<span class="pill skip">author replied</span>
+    {% elif t.replies %}<span class="pill">{{ t.replies }} {{ "reply" if t.replies == 1 else "replies" }}, not the author</span>
+    {% else %}<span class="pill focus">no reply</span>{% endif %}
+    {% if t.outdated %}<span class="pill">outdated</span>{% endif %}
+    <br><span class="muted">{{ t.excerpt }}</span>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}

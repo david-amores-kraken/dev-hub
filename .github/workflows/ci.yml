@@ -18,13 +18,6 @@ jobs:
         with:
           enable-cache: true
 
-      # pyproject.toml points at folders in ~/.claude, which only exist on my machine: the pr-brief
-      # package and a shared lib folder. Put a small stand-in package and an empty folder there.
-      - name: Add the ~/.claude stand-ins
-        run: |
-          mkdir -p "$GITHUB_WORKSPACE/../../.claude/skills" "$GITHUB_WORKSPACE/../../.claude/lib"
-          cp -r .github/ci/pr-brief "$GITHUB_WORKSPACE/../../.claude/skills/pr-brief"
-
       - run: uv sync --locked
       - run: uv run ruff check .
       - run: uv run ruff format --check .

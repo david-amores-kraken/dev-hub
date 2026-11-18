@@ -1,0 +1,44 @@
+<details>
+<summary>What each review level does</summary>
+<div class="scroll">
+<table class="tier-help">
+  <tr><th>Level</th><th>The automatic choice when</th><th>Who reviews</th><th class="num">Spend cap</th></tr>
+  <tr>
+    <td>note</td>
+    <td>Every change is mechanical: renames, whitespace, lockfiles.</td>
+    <td>Nobody. The brief just says so.</td>
+    <td class="num">${{ budgets.note }}</td>
+  </tr>
+  <tr>
+    <td>light</td>
+    <td>Up to {{ thresholds.light.max_substantive_lines }} substantive lines in
+      {{ thresholds.light.max_files }} files or fewer, and nothing risky.</td>
+    <td>One general reviewer, so a short brief.</td>
+    <td class="num">${{ budgets.light }}</td>
+  </tr>
+  <tr>
+    <td>standard</td>
+    <td>Everything between light and large.</td>
+    <td>Six specialised reviewers: domain, correctness, cross-client, tests, conventions and
+      naming. A UX reviewer joins when the diff changes something a user sees.</td>
+    <td class="num">${{ budgets.standard }}</td>
+  </tr>
+  <tr>
+    <td>large</td>
+    <td>{{ thresholds.large.min_substantive_lines }} substantive lines or more, or
+      {{ thresholds.large.min_files }} files or more.</td>
+    <td>The same reviewers as standard, each told to read the whole diff in order and to say
+      what they couldn't cover.</td>
+    <td class="num">${{ budgets.large }}</td>
+  </tr>
+</table>
+</div>
+<p class="meta">
+  The suggested level in the list comes from the PR's size alone: all changed lines and files, a
+  migration or settings file spotted by its path, and PRs that only touch lockfiles. The automatic
+  choice counts only substantive lines (moves and whitespace excluded) once the PR is fetched, so
+  it can differ. Anything risky (a migration, raw SQL, a transaction, permissions, settings) rules
+  out light there. Picking a level yourself overrides all of this. The cap stops a run that costs
+  more than expected, and the brief is built from whatever the reviewers finished.
+</p>
+</details>

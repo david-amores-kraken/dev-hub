@@ -1,0 +1,65 @@
+<tr data-pr="{{ row.number }}" data-status="{{ row.status }}" data-group="{{ row.group }}"
+    data-team="{{ 'core' if row.core else 'other' }}" data-i="{{ position }}"
+    data-created="{{ row.created.strftime('%Y-%m-%dT%H:%M:%SZ') if row.created else '' }}"
+    data-updated="{{ row.updated.strftime('%Y-%m-%dT%H:%M:%SZ') if row.updated else '' }}">
+  <td class="pr">
+    {% if row.url %}<a href="{{ row.url }}">#{{ row.number }}</a>{% else %}#{{ row.number }}{% endif %}
+  </td>
+  <td>{{ row.title }}</td>
+  <td class="author">{{ row.author }}</td>
+  <td class="date" {% if row.created %}title="{{ row.created.strftime('%Y-%m-%d %H:%M') }} UTC"{% endif %}>
+    {{ row.created.strftime("%Y-%m-%d") if row.created else "" }}
+  </td>
+  <td class="date" {% if row.updated %}title="{{ row.updated.strftime('%Y-%m-%d %H:%M') }} UTC"{% endif %}>
+    {{ row.updated.strftime("%Y-%m-%d") if row.updated else "" }}
+  </td>
+  <td class="num" {% if row.size_note %}title="{{ row.size_note }}"{% endif %}>
+    {{ row.size or "" }}
+  </td>
+  <td>
+    {% if row.group == "todo" %}
+      <select data-pr="{{ row.number }}" title="How much review to run" {{ "disabled" if row.busy }}>
+        {% for tier in tiers %}
+          <option value="{{ tier }}"
+            {{ "selected" if tier == (row.tier if row.busy else row.suggested) }}>
+            {{ tier }}
+          </option>
+        {% endfor %}
+      </select>
+    {% elif row.tier %}
+      {{ row.tier }}
+    {% endif %}
+  </td>
+  <td class="status">
+    {% if row.status == "briefed" %}
+      <a class="pill briefed" href="{{ url_for('prs.report_page', pr=row.number, run=row.latest_run) }}">brief ready</a>
+    {% else %}
+      <span class="pill {{ row.status }}">{{ STATUS_LABELS[row.status] }}</span>
+    {% endif %}
+    {% if row.brief_removed %}<div class="meta">earlier brief removed</div>{% endif %}
+    {% if row.error %}<div class="err">{{ row.error }}</div>{% endif %}
+    {% if row.older_runs or (row.latest_run and row.status != "briefed") %}
+      <div class="meta">
+        {% if row.status != "briefed" %}
+          <a href="{{ url_for('prs.report_page', pr=row.number, run=row.latest_run) }}">brief</a>
+        {% endif %}
+        {% for run in row.older_runs %}
+          <a href="{{ url_for('prs.report_page', pr=row.number, run=run) }}">{{ run[:15] }}</a>
+        {% endfor %}
+      </div>
+    {% endif %}
+  </td>
+  <td class="actions">
+    {% if row.status in ("waiting", "failed") %}
+      <button class="act" data-action="brief">{{ "Retry" if row.status == "failed" else "Brief" }}</button>
+      <button class="plain" data-action="mark" data-state="skipped">Won't review</button>
+    {% elif row.busy %}
+      <button class="act" disabled>{{ STATUS_LABELS[row.status] }}</button>
+    {% elif row.status in ("reviewed", "skipped") %}
+      <button class="plain" data-action="mark" data-state="">Undo</button>
+    {% else %}
+      <button class="plain" data-action="mark" data-state="reviewed">Reviewed</button>
+      <button class="plain" data-action="mark" data-state="skipped">Won't review</button>
+    {% endif %}
+  </td>
+</tr>
