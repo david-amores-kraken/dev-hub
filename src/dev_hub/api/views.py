@@ -28,7 +28,7 @@ from dev_hub.diffs.pages import (
     versions,
 )
 from dev_hub.diffs.store import list_reviews, load_description
-from dev_hub.features.store import get_feature, slug_of
+from dev_hub.features.store import get_feature, has_feature, slug_of
 from dev_hub.features.views import LABELS, parts_of
 from dev_hub.sandbox import CONTENT_POLICY
 
@@ -39,18 +39,26 @@ SIDES = ("old", "new")
 
 @blueprint.get("/branches")
 def branches() -> Response | tuple[Response, int]:
-    """The local branches with commits the base doesn't have, newest first."""
+    """The local branches to review, newest first: those with commits the base doesn't have,
+    and those with a feature (a plan, say), which may have none yet."""
     try:
-        found = git.list_branches()
+        found = git.list_branches(everything=True)
     except GitError as problem:
         return jsonify(error=str(problem)), 502
-    return jsonify(
-        [
-            {"name": b.name, "commits": b.commits, "updated": b.updated, "subject": b.subject}
-            for b in found
-            if b.commits
-        ]
-    )
+    listed = []
+    for b in found:
+        feature = has_feature(slug_of(b.name))
+        if b.commits or feature:
+            listed.append(
+                {
+                    "name": b.name,
+                    "commits": b.commits,
+                    "updated": b.updated,
+                    "subject": b.subject,
+                    "feature": feature,
+                }
+            )
+    return jsonify(listed)
 
 
 @blueprint.get("/branch")

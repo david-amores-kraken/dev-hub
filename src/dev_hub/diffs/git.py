@@ -47,12 +47,13 @@ class Commit:
     message: str  # the whole message, subject included
 
 
-def list_branches() -> list[Branch]:
-    """Local branches with commits the base doesn't have, newest first."""
+def list_branches(everything: bool = False) -> list[Branch]:
+    """Local branches with commits the base doesn't have, newest first. With `everything`, also
+    the ones with none (a branch just made from the base, or merged into it)."""
     fields = ["%(refname:short)", "%(committerdate:format:%Y-%m-%d %H:%M)", "%(subject)"]
     output = _git(
         "for-each-ref",
-        f"--no-merged={base_ref()}",
+        *([] if everything else [f"--no-merged={base_ref()}"]),
         "--sort=-committerdate",
         f"--format={FIELD.join(fields)}",
         "refs/heads",
