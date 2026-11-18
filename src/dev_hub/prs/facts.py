@@ -11,7 +11,7 @@ from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from dev_hub.review_context import run
+from dev_hub.review_context import is_test, run
 
 LOCKFILES = {
     "yarn.lock",
@@ -113,17 +113,6 @@ def summarise(files: list[dict]) -> dict:
         ),
         "paths": [f["path"] for f in files],
     }
-
-
-def is_test(path: str) -> bool:
-    parts = PurePosixPath(path).parts
-    name = parts[-1]
-    return (
-        "tests" in parts
-        or "__snapshots__" in parts
-        or name.startswith("test_")
-        or name.endswith(("_test.py", ".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx"))
-    )
 
 
 def generated_reason(path: str, worktree: Path | None, status: str) -> str | None:

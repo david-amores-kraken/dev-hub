@@ -42,6 +42,18 @@ class Refused(SystemExit):
         super().__init__(3)
 
 
+def is_test(path: str) -> bool:
+    """Whether a changed file is a test, a test snapshot or a front-end spec."""
+    parts = PurePosixPath(path).parts
+    name = parts[-1]
+    return (
+        "tests" in parts
+        or "__snapshots__" in parts
+        or name.startswith("test_")
+        or name.endswith(("_test.py", ".test.ts", ".test.tsx", ".spec.ts", ".spec.tsx"))
+    )
+
+
 def run(cmd: list[str], *, input: str | None = None, check: bool = True) -> str:
     result = subprocess.run(cmd, input=input, capture_output=True, text=True, check=False)
     if check and result.returncode != 0:

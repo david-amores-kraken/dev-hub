@@ -12,6 +12,7 @@ from typing import Any
 from dev_hub.diffs import git
 from dev_hub.diffs.store import list_comments, load_description
 from dev_hub.review.prepare import hub_url
+from dev_hub.review_context import is_test
 
 # Comments within this many minutes of each other belong to one round of review.
 ROUND_GAP_MINUTES = 30
@@ -25,7 +26,6 @@ def facts(branch: str) -> dict[str, Any]:
     on_code = [c for c in mine if c["target"]["kind"] == "line"]
     on_text = [c for c in mine if c["target"]["kind"] != "line"]
     stats = git.branch_stats(branch)
-    is_test = lambda path: "/tests/" in path or path.rsplit("/", 1)[-1].startswith("test_")  # noqa: E731
     return {
         "pr": {
             "number": None,
