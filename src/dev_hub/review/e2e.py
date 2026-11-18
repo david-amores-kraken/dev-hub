@@ -13,14 +13,13 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
-import os
 import re
-import tempfile
 from pathlib import Path
 
-from dev_hub.config import HOST, PORT, e2e_dir, repo_dir
+from dev_hub.config import e2e_dir, hub_url, repo_dir
 from dev_hub.diffs import git
 from dev_hub.features.store import slug_of
+from dev_hub.files import write_atomic
 from dev_hub.plans.store import SLUG_RE
 
 IMG_RE = re.compile(r"\{\{IMG:([A-Za-z0-9_.-]+)\}\}")
@@ -61,13 +60,13 @@ def publish(
         )
 
     target = e2e_dir() / f"{slug}.html"
-    _write(target, html)
+    write_atomic(target, html)
     if notes is not None:
-        _write(e2e_dir() / f"{slug}.feedback.md", notes)
+        write_atomic(e2e_dir() / f"{slug}.feedback.md", notes)
     saved = f"published {target}" + (
         f" and the feedback {target.with_suffix('.feedback.md')}" if notes else ""
     )
-    return f"{saved}\nhttp://{HOST}:{PORT}/features/{slug}?tab=e2e"
+    return f"{saved}\n{hub_url()}/features/{slug}?tab=e2e"
 
 
 def run_id(slug: str) -> str:
@@ -91,11 +90,3 @@ def _token(run_dir: Path) -> str:
 
 def _data_uri(path: Path) -> str:
     return "data:image/png;base64," + base64.b64encode(path.read_bytes()).decode()
-
-
-def _write(path: Path, text: str) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    handle, temporary = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-    with os.fdopen(handle, "w") as file:
-        file.write(text)
-    os.replace(temporary, path)

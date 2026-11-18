@@ -117,7 +117,7 @@ The repo is only the hub. These live outside it and need setting up by hand:
 - **Tools.** `uv`, `git`, and Claude Code. The `pr-brief` skill also uses `gh`, logged in to GitHub.
 - **The `pr-brief` skill**, linked from this repo (see its Setup section). Its config is
   `~/pr-reviews/config.json`, copied from `skills/pr-brief/config.example.json`: it has machine
-  paths (`main_repo`, `claude`, `with_1password`) and the reviewer groups to watch. Its poller runs
+  paths (`claude`, `with_1password`) and the reviewer groups to watch. Its poller runs
   from its own launchd job (`com.davidamores.pr-brief`).
 - **For persona reviews** (`dev_hub.review`):
   - the persona agents in `~/.claude/agents` (`review-*.md`),
@@ -149,7 +149,8 @@ uv run ruff check . && uv run ruff format --check . && uv run ty check && uv run
 
 GitHub Actions runs the same checks on every PR (`.github/workflows/ci.yml`).
 
-`DEV_HUB_PORT` changes the port. If you do, set `hub_url` in `~/pr-reviews/config.json` to match.
+`DEV_HUB_PORT` changes the port, and `DEV_HUB_REPO` the kraken-core checkout. The PR section uses
+both too.
 
 ## Adding a section
 

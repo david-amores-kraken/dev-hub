@@ -15,8 +15,6 @@ from __future__ import annotations
 
 import fcntl
 import json
-import os
-import tempfile
 import threading
 import uuid
 from collections.abc import Callable
@@ -27,6 +25,7 @@ from typing import Any
 from urllib.parse import quote
 
 from dev_hub.config import reviews_dir
+from dev_hub.files import write_atomic
 
 MAX_TITLE = 500
 MAX_BODY = 100_000
@@ -228,11 +227,7 @@ def _change[T](branch: str, change: Callable[[dict[str, Any]], T]) -> T:
         fcntl.flock(lock, fcntl.LOCK_EX)
         data = _read(path)
         result = change(data)
-        # Write a temporary file next to it and swap it in, so a crash can't leave half a file.
-        handle, temporary = tempfile.mkstemp(dir=path.parent, suffix=".tmp")
-        with os.fdopen(handle, "w") as file:
-            json.dump(data, file, indent=2)
-        os.replace(temporary, path)
+        write_atomic(path, json.dumps(data, indent=2))
         return result
 
 

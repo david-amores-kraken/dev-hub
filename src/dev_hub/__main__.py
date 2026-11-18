@@ -3,11 +3,11 @@
 import sys
 
 from dev_hub.app import create_app
-from dev_hub.config import HOST, PORT
+from dev_hub.config import HOST, PORT, hub_url
 
 
 def main() -> None:
-    print(f"dev-hub on http://{HOST}:{PORT}", file=sys.stderr, flush=True)
+    print(f"dev-hub on {hub_url()}", file=sys.stderr, flush=True)
     create_app().run(host=HOST, port=PORT, threaded=True)
 
 

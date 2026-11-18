@@ -18,7 +18,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from dev_hub.config import HOST, PORT, base_ref, repo_dir
+from dev_hub.config import base_ref, hub_url, repo_dir
 from dev_hub.diffs import git
 from dev_hub.diffs.store import ME, list_comments, list_reviews, load_description
 from dev_hub.review.personas import PERSONAS, USER_FACING_PERSONAS
@@ -37,8 +37,8 @@ def post_command() -> str:
     return f"{sys.executable} -m dev_hub.review post"
 
 
-def hub_url(branch: str) -> str:
-    return f"http://{HOST}:{PORT}/diffs/{branch}"
+def diff_url(branch: str) -> str:
+    return f"{hub_url()}/diffs/{branch}"
 
 
 def describe(target: dict[str, Any]) -> str:
@@ -106,7 +106,7 @@ def prepare(
         f"### {c.sha[:7]} {c.subject}\n\n{_rest(c)}".rstrip() for c in commits
     )
     (run_dir / "pr.md").write_text(
-        f"# {title}\n\nLocal review of branch `{branch}` (no PR yet): {hub_url(branch)}\n\n"
+        f"# {title}\n\nLocal review of branch `{branch}` (no PR yet): {diff_url(branch)}\n\n"
         f"## Description\n\n{description.body.strip() or '(not written yet)'}\n\n"
         f"## Commits ({len(commits)})\n\n{commit_text}\n"
     )
@@ -125,7 +125,7 @@ def prepare(
         "mode": "local",
         "repo": str(repo_dir()),
         "branch": branch,
-        "url": hub_url(branch),
+        "url": diff_url(branch),
         "sha": sha,
         "base": base_ref(),
         "checkout_is_head": checkout_is_head,
@@ -182,7 +182,7 @@ def _prior(
             {
                 "persona": r["persona"],
                 "review_id": r["id"],
-                "url": hub_url(branch),
+                "url": diff_url(branch),
                 "sha": r["sha"][:12],
             }
             for r in reviews

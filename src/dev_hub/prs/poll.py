@@ -28,6 +28,7 @@ import uuid
 from datetime import UTC, datetime
 from pathlib import Path
 
+from dev_hub.config import repo_dir
 from dev_hub.prs.assemble import report_url
 from dev_hub.prs.config import load
 from dev_hub.prs.manual import fetch_pr
@@ -310,7 +311,7 @@ def brief(pr: dict, config: dict, state: dict, tier: str | None) -> str:
         [*module("prepare"), str(number), *(["--tier", tier] if tier else [])],
         capture_output=True,
         text=True,
-        cwd=config["main_repo"],
+        cwd=repo_dir(),
         check=False,
     )
     if prepared.returncode != 0:
@@ -399,7 +400,7 @@ def run_claude(
             command,
             capture_output=True,
             text=True,
-            cwd=config["main_repo"],
+            cwd=repo_dir(),
             timeout=config["timeout_minutes"] * 60,
             check=False,
             env={**os.environ, "NO_COLOR": "1"},

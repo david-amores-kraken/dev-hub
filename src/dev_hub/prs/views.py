@@ -15,6 +15,7 @@ from typing import Any
 from flask import Blueprint, Response, abort, jsonify, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response as BaseResponse
 
+from dev_hub.config import repo_dir
 from dev_hub.prs import report as report_helpers
 from dev_hub.prs.config import load
 from dev_hub.prs.manual import fetch_pr, parse_pr_link
@@ -182,11 +183,10 @@ def error(message: str, status: int) -> tuple[Response, int]:
 
 def start_poller(flag: str) -> None:
     """Run the poller detached, so restarting this server doesn't kill a brief half way."""
-    config = load()
     log = (HOME / "server.log").open("ab")
     subprocess.Popen(
         [sys.executable, "-m", "dev_hub.prs.poll", flag],
-        cwd=config["main_repo"],
+        cwd=repo_dir(),
         stdin=subprocess.DEVNULL,
         stdout=log,
         stderr=log,
