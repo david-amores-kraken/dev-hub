@@ -13,10 +13,10 @@ import json
 import sys
 from pathlib import Path
 
+from dev_hub import review_context
 from dev_hub.review import description
 from dev_hub.review.e2e import publish
 from dev_hub.review.facts import facts
-from dev_hub.review.helpers import load_helpers
 from dev_hub.review.post import post
 from dev_hub.review.prepare import prepare
 from dev_hub.review.todo import address, todo
@@ -71,7 +71,7 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.command == "prepare":
-        personas, folder = prepare(args.branch, load_helpers(), final=args.final)
+        personas, folder = prepare(args.branch, review_context, final=args.final)
         print(f"personas: {', '.join(personas)}")
         print(folder)
     elif args.command == "post":

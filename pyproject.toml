@@ -2,7 +2,7 @@
 name = "dev-hub"
 version = "0.1.0"
 description = "A local web page for my dev work: PR briefs, feature plans, and whatever comes next."
-requires-python = ">=3.12"
+requires-python = ">=3.13"
 dependencies = [
     "emoji>=2.16.0",
     "flask>=3.1",
@@ -22,7 +22,7 @@ module-root = "src"
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.lint]
 # Deliberately light: the usual bug-finders and tidy-ups, no docstring or complexity rules.
@@ -31,10 +31,6 @@ ignore = ["E501", "RUF001", "RUF002", "RUF003"]  # the formatter owns line lengt
 
 [tool.ruff.lint.isort]
 known-first-party = ["dev_hub"]
-
-[tool.ty.environment]
-# review_context.py is shared with the review skills and lives outside both projects.
-extra-paths = ["../../.claude/lib"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

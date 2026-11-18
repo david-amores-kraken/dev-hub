@@ -16,10 +16,9 @@ from datetime import UTC, datetime
 from os.path import commonpath
 from pathlib import Path
 
-from review_context import run
-
 from dev_hub.prs.config import load as load_config
 from dev_hub.prs.text import REF_RE
+from dev_hub.review_context import run
 
 # Used when meta.json predates the "personas" list prepare.py writes.
 AGENTS = ("domain", "correctness", "cross-client", "tests", "conventions", "naming")

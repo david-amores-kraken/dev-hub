@@ -11,7 +11,7 @@ from collections import Counter
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from review_context import run
+from dev_hub.review_context import run
 
 LOCKFILES = {
     "yarn.lock",
