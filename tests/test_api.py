@@ -3,9 +3,11 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+import pytest
 from flask.testing import FlaskClient
 from helpers import commit, git
 
+import dev_hub.diffs.git
 from dev_hub.diffs.git import list_commits
 from dev_hub.diffs.pages import page_files
 from dev_hub.diffs.store import add_comment, add_review, save_description
@@ -165,6 +167,17 @@ def test_a_file_is_read_as_the_page_shows_it(
             client, base_url, "/api/file", branch=BRANCH, page=page, path="one.txt", side=side
         )
         assert (status, data) == (200, {"text": text}), (page, side)
+
+
+def test_a_file_too_big_for_the_diff_page_is_still_read(
+    repo: Path, client: FlaskClient, base_url: str, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # The diff page falls back to the patch for a big file, but the editor has nothing else.
+    monkeypatch.setattr(dev_hub.diffs.git, "MAX_BLOB", 2)
+    status, data = get(
+        client, base_url, "/api/file", branch=BRANCH, page="changes", path="one.txt", side="new"
+    )
+    assert (status, data) == (200, {"text": "one\n"})
 
 
 def test_a_file_must_be_on_a_page_of_the_branch(

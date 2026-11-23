@@ -25,7 +25,6 @@ from dev_hub.diffs.pages import (
     page_files,
     placements,
     shown,
-    versions,
 )
 from dev_hub.diffs.store import list_reviews, load_description
 from dev_hub.features.store import get_feature, has_feature, slug_of
@@ -102,8 +101,9 @@ def branch() -> Response:
 
 @blueprint.get("/file")
 def file() -> Response:
-    """One side of a file on one page of a branch, as the diff page shows it. `text` is None
-    when that side doesn't exist, is binary or is too big."""
+    """One side of a file on one page of a branch. `text` is None when that side doesn't exist,
+    is binary or is too big even for the editor. The limit is higher than the diff page's, which
+    can fall back to the patch: the editor has only these files to show."""
     name = _branch()
     page, path, side = (request.args.get(key, "") for key in ("page", "path", "side"))
     if side not in SIDES:
@@ -117,8 +117,11 @@ def file() -> Response:
     index = next((i for i, f in enumerate(page_files(patch)) if f["path"] == path), None)
     if index is None:
         abort(404)
-    contents = versions(patch)
-    return jsonify(text=contents[index][side] if index < len(contents) else None)
+    try:
+        text = git.file_version(patch, index)[side]
+    except GitError:
+        text = None
+    return jsonify(text=text)
 
 
 def _branch() -> str:

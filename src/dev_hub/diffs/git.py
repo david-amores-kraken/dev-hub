@@ -22,6 +22,8 @@ SHA_RE = re.compile(r"^[0-9a-f]{40}$")
 INDEX_RE = re.compile(r"^index ([0-9a-f]+)\.\.([0-9a-f]+)", re.MULTILINE)
 NO_BLOB = re.compile(r"^0+$")
 MAX_BLOB = 1_000_000  # bytes; a bigger file is highlighted line by line instead
+# VS Code copes with much bigger files than the diff page, and shows nothing without them.
+MAX_EDITOR_BLOB = 50_000_000  # bytes
 FIELD = "\x1f"
 RECORD = "\x1e"
 
@@ -117,18 +119,36 @@ def file_versions(patch: str) -> list[dict[str, str | None]]:
     The diff page highlights whole files, so code that spans lines (a docstring) is coloured
     right. A side is None when the file didn't exist there, is binary or is too big.
     """
+    return _versions(_blob_pairs(patch), MAX_BLOB)
+
+
+def file_version(patch: str, index: int, max_size: int = MAX_EDITOR_BLOB) -> dict[str, str | None]:
+    """The whole file before and after, for the file at `index` of the patch only. A side is
+    None when the file didn't exist there, is binary or is bigger than `max_size` bytes."""
+    pairs = _blob_pairs(patch)[index : index + 1] or [(None, None)]
+    return _versions(pairs, max_size)[0]
+
+
+def _blob_pairs(patch: str) -> list[tuple[str | None, str | None]]:
+    """The blobs of each file of the patch, before and after, in the patch's order."""
     files = re.split(r"^diff --git ", patch, flags=re.MULTILINE)[1:]
-    pairs = []
+    pairs: list[tuple[str | None, str | None]] = []
     for header in files:
         found = INDEX_RE.search(header.split("\n@@", 1)[0])
         pairs.append((found[1], found[2]) if found else (None, None))
+    return pairs
+
+
+def _versions(
+    pairs: list[tuple[str | None, str | None]], max_size: int
+) -> list[dict[str, str | None]]:
     wanted = {blob for pair in pairs for blob in pair if blob and not NO_BLOB.match(blob)}
-    blobs = _blobs(sorted(wanted))
+    blobs = _blobs(sorted(wanted), max_size)
     return [{"old": blobs.get(old or ""), "new": blobs.get(new or "")} for old, new in pairs]
 
 
-def _blobs(names: list[str]) -> dict[str, str]:
-    """The text of each named blob that is small enough and not binary."""
+def _blobs(names: list[str], max_size: int) -> dict[str, str]:
+    """The text of each named blob that is at most `max_size` bytes and not binary."""
     if not names:
         return {}
     sizes = _git(
@@ -139,7 +159,7 @@ def _blobs(names: list[str]) -> dict[str, str]:
     small = [
         name
         for name, line in zip(names, sizes.splitlines(), strict=True)
-        if line.split()[1:2] == ["blob"] and int(line.split()[2]) <= MAX_BLOB
+        if line.split()[1:2] == ["blob"] and int(line.split()[2]) <= max_size
     ]
     if not small:
         return {}

@@ -9,6 +9,7 @@ from dev_hub.diffs.git import (
     GitError,
     branch_patch,
     commit_patch,
+    file_version,
     file_versions,
     has_branch,
     list_branches,
@@ -92,3 +93,12 @@ def test_binary_files_have_no_versions(repo: Path) -> None:
     git(repo, "add", "blob.bin")
     git(repo, "commit", "-q", "-m", "Add a binary")
     assert file_versions(git(repo, "show", "--format=", "HEAD")) == [{"old": None, "new": None}]
+
+
+def test_file_version_reads_one_file_up_to_the_size_given(repo: Path) -> None:
+    commit(repo, "base.txt", "base\nchanged\n", "Change base")
+    commit(repo, "new.txt", "new\n", "Add new")
+    patch = git(repo, "diff", "HEAD~2", "HEAD") + "\n"
+    assert file_version(patch, 1) == {"old": None, "new": "new\n"}
+    assert file_version(patch, 0, max_size=5) == {"old": "base\n", "new": None}  # new is 13 bytes
+    assert file_version(patch, 2) == {"old": None, "new": None}  # no such file
