@@ -8,7 +8,8 @@ const path = require("node:path");
 const { diffCommand, uriOf } = require("./documents");
 const model = require("./model");
 
-/** @typedef {{ item: vscode.TreeItem, children?: () => Node[] }} Node */
+/** A row in the view. `file` is set on a changed file's row: its path in the repo.
+ * @typedef {{ item: vscode.TreeItem, children?: () => Node[], file?: string }} Node */
 /** @typedef {import("./model").Branch} Branch */
 /** @typedef {import("./model").Comment} Comment */
 
@@ -125,13 +126,16 @@ class Tree {
   changes(/** @type {Branch} */ data) {
     const counts = model.openCounts(data);
     const files = (/** @type {string} */ page) =>
-      (data.files[page] ?? []).map(file =>
-        leaf(path.basename(file.path), STATUS_ICONS[/** @type {keyof STATUS_ICONS} */ (file.status)] ?? "diff-modified", {
+      (data.files[page] ?? []).map(file => {
+        const node = leaf(path.basename(file.path), STATUS_ICONS[/** @type {keyof STATUS_ICONS} */ (file.status)] ?? "diff-modified", {
           description: `${path.dirname(file.path)} · ${file.status}`,
           tooltip: file.status === "renamed" ? `${file.old_path} → ${file.path}` : file.path,
           command: diffCommand(data, page, file),
-        }),
-      );
+          // Gives it the "Show in Explorer" button. A deleted file isn't there to show.
+          contextValue: file.status === "deleted" ? undefined : "file",
+        });
+        return { ...node, file: file.path };
+      });
     const all = group("All changes", "files", () => files(model.CHANGES), { id: "changes/all", description: badge(counts.changes) }, false);
     const commits = data.commits.map((c, i) =>
       group(`${i + 1}  ${c.subject}`, "git-commit", () => [
