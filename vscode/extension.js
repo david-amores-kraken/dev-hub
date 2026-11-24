@@ -6,7 +6,7 @@
 
 const vscode = require("vscode");
 const { Threads } = require("./src/comments");
-const { Documents, SCHEME, diffCommand } = require("./src/documents");
+const { Documents, SCHEME, diffCommand, docOf } = require("./src/documents");
 const { Hub } = require("./src/hub");
 const { Pages } = require("./src/pages");
 const { Review } = require("./src/review");
@@ -56,6 +56,34 @@ async function openBranch(/** @type {Review} */ review, /** @type {string} */ br
   }
 }
 
+/** The repo path of the file a diff or a row under Changes is about. From the diff's title bar
+ * VS Code passes the diff's URI; from the view it passes the row. */
+function changedPath(/** @type {vscode.Uri | import("./src/tree").Node | undefined} */ target) {
+  if (target && !(target instanceof vscode.Uri)) return target.file;
+  const uri = target ?? vscode.window.activeTextEditor?.document.uri;
+  const doc = uri && docOf(uri)?.doc;
+  return doc?.kind === "file" ? doc.path : undefined;
+}
+
+/** Show a changed file in the Explorer. The hub doesn't say where the repo is, so this looks for
+ * the file in each workspace folder. It is the working copy's file, which may be on another
+ * branch than the one under review. */
+async function revealFile(/** @type {vscode.Uri | import("./src/tree").Node | undefined} */ target) {
+  const file = changedPath(target);
+  if (!file) return;
+  for (const folder of vscode.workspace.workspaceFolders ?? []) {
+    const uri = vscode.Uri.joinPath(folder.uri, file);
+    try {
+      await vscode.workspace.fs.stat(uri);
+    } catch {
+      continue;
+    }
+    await vscode.commands.executeCommand("revealInExplorer", uri);
+    return;
+  }
+  vscode.window.showWarningMessage(`${file} isn't in this workspace. The repo may not be open here, or the file isn't in the working copy.`);
+}
+
 function activate(/** @type {vscode.ExtensionContext} */ context) {
   const hub = new Hub(hubUrl);
   const review = new Review(hub, context.workspaceState);
@@ -74,6 +102,7 @@ function activate(/** @type {vscode.ExtensionContext} */ context) {
     vscode.commands.registerCommand("devHubReview.pickBranch", () => pickBranch(review)),
     vscode.commands.registerCommand("devHubReview.refresh", () => Promise.all([review.reload(), pages.refresh()])),
     vscode.commands.registerCommand("devHubReview.openPage", part => pages.open(part)),
+    vscode.commands.registerCommand("devHubReview.revealFile", revealFile),
     vscode.commands.registerCommand("devHubReview.openInHub", () => {
       const data = review.data;
       if (data) vscode.env.openExternal(vscode.Uri.parse(hub.link(data.feature?.url ?? data.urls.overview)));

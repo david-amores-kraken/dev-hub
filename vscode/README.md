@@ -25,6 +25,10 @@ The **Dev Hub review** icon in the activity bar shows three groups for the branc
 - **Changes**: "All changes", then each commit with its message and files, with the number of open
   comments on each, as in the hub.
 
+A diff's title bar, and each file under Changes, has a **Show in Explorer** button. It shows the
+file in VS Code's Explorer, if the repo is open in the window. That is the working copy's file,
+which may be on another branch.
+
 Comments:
 
 - A comment is shown on the pages the hub shows it on. A comment on a commit's lines is also on

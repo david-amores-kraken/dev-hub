@@ -45,6 +45,7 @@
       { "command": "devHubReview.refresh", "title": "Refresh", "category": "Dev Hub", "icon": "$(refresh)" },
       { "command": "devHubReview.openInHub", "title": "Open in the dev hub", "category": "Dev Hub", "icon": "$(link-external)" },
       { "command": "devHubReview.openPage", "title": "Open page" },
+      { "command": "devHubReview.revealFile", "title": "Show in Explorer", "category": "Dev Hub", "icon": "$(go-to-file)" },
       { "command": "devHubReview.showComment", "title": "Show comment" },
       { "command": "devHubReview.createNote", "title": "Add comment" },
       { "command": "devHubReview.replyNote", "title": "Reply" },
@@ -65,6 +66,7 @@
       ],
       "commandPalette": [
         { "command": "devHubReview.openPage", "when": "false" },
+        { "command": "devHubReview.revealFile", "when": "false" },
         { "command": "devHubReview.showComment", "when": "false" },
         { "command": "devHubReview.createNote", "when": "false" },
         { "command": "devHubReview.replyNote", "when": "false" },
@@ -76,6 +78,12 @@
         { "command": "devHubReview.reopenThread", "when": "false" },
         { "command": "devHubReview.address", "when": "false" },
         { "command": "devHubReview.dismiss", "when": "false" }
+      ],
+      "editor/title": [
+        { "command": "devHubReview.revealFile", "group": "navigation", "when": "resourceScheme == devhub-review && isInDiffEditor" }
+      ],
+      "view/item/context": [
+        { "command": "devHubReview.revealFile", "group": "inline", "when": "view == devHubReview.feature && viewItem == file" }
       ],
       "comments/commentThread/context": [
         { "command": "devHubReview.createNote", "group": "inline", "when": "commentController == devhub-review && commentThreadIsEmpty" },
