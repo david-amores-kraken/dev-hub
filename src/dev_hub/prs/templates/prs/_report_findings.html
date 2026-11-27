@@ -13,6 +13,7 @@
 <div class="card sev-{{ f.severity }}">
   <p>
     <span class="pill {{ SEVERITY_CLASS[f.severity] }}">{{ SEVERITY_LABELS[f.severity] }}</span>
+    {% if f.get("focus") %}<span class="pill new">your focus</span>{% endif %}
     {% if f.get("status") %}<span class="pill {{ STATUS_CLASS[f.status] }}">{{ f.status }}</span>{% endif %}
     <span class="meta">{{ f.agents | join(", ") }}</span>
     {% if f.commits %}<span class="meta">in {{ f.commits | join(", ") }}</span>{% endif %}

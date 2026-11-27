@@ -62,7 +62,7 @@ LOGIN_FAILURE_MARKERS = (
 )
 RUN_NOTE = (
     "The poller already ran prepare.py for this PR, so skip step 1 of the skill. Run folder: {run}"
-    " (tier: {tier}; personas: {personas})."
+    " (tier: {tier}; personas: {personas}; focus: {focus})."
 )
 
 
@@ -139,7 +139,7 @@ def process_requests(config: dict, state: dict) -> str:
             "title": request["title"],
             "updatedAt": request["updated_at"],
         }
-        outcome = brief(pr, config, state, request["tier"])
+        outcome = brief(pr, config, state, request["tier"], request.get("focus"))
         write_json(STATE, state)
         if outcome == "done":
             write_request(request | {"status": "done", "finished_at": now()})
@@ -300,15 +300,23 @@ def wanted(pr: dict, state: dict, config: dict) -> bool:
     return why_not(pr, state, config) == "wanted"
 
 
-def brief(pr: dict, config: dict, state: dict, tier: str | None) -> str:
-    """Brief one PR at the given tier (None: by size). Returns done, failed, refused or login."""
+def brief(pr: dict, config: dict, state: dict, tier: str | None, focus: str | None = None) -> str:
+    """Brief one PR at the given tier (None: by size), with the user's focus if they gave one.
+
+    Returns done, failed, refused or login.
+    """
     number = pr["number"]
     entry = state.setdefault(str(number), {"attempts": 0})
     entry["updated_at"] = pr["updatedAt"]
 
     started = time.monotonic()
     prepared = subprocess.run(
-        [*module("prepare"), str(number), *(["--tier", tier] if tier else [])],
+        [
+            *module("prepare"),
+            str(number),
+            *(["--tier", tier] if tier else []),
+            *(["--focus", focus] if focus else []),
+        ],
         capture_output=True,
         text=True,
         cwd=repo_dir(),
@@ -393,7 +401,12 @@ def run_claude(
         "--session-id",
         session_id,
         "--append-system-prompt",
-        RUN_NOTE.format(run=run_dir, tier=meta["tier"], personas=", ".join(meta["personas"])),
+        RUN_NOTE.format(
+            run=run_dir,
+            tier=meta["tier"],
+            personas=", ".join(meta["personas"]),
+            focus="yes, in focus.md" if meta.get("focus") else "none",
+        ),
     ]
     try:
         done = subprocess.run(

@@ -1,11 +1,13 @@
 """Gather everything the pr-brief agents need about a PR into a run folder.
 
-Usage: python -m dev_hub.prs.prepare <pr-number> [--again] [--tier note|light|standard|large] [--repo owner/name]
+Usage: python -m dev_hub.prs.prepare <pr-number> [--again] [--tier note|light|standard|large]
+       [--focus <text>] [--repo owner/name]
 
 Refuses a PR that already has a brief, unless --again is passed: only the user asks for a
 second brief, never the poller. Checks the PR head out into its own detached worktree (~/pr-reviews/worktrees/pr<n>), works out
 the mechanical facts about the diff, and writes the run folder. Nothing in the PR is executed.
-Prints the run folder path on the last line.
+--focus is what the user wants the reviewers to look at more closely. It goes into focus.md,
+which brief.md tells every persona to read. Prints the run folder path on the last line.
 """
 
 from __future__ import annotations
@@ -82,13 +84,19 @@ def main() -> None:
         del args[i : i + 2]
         if forced_tier not in TIERS:
             raise SystemExit(f"--tier must be one of: {', '.join(TIERS)}")
+    focus = ""
+    if "--focus" in args:
+        i = args.index("--focus")
+        focus = args[i + 1].strip() if i + 1 < len(args) else ""
+        del args[i : i + 2]
     if "--repo" in args:
         i = args.index("--repo")
         repo_arg = args[i + 1]
         del args[i : i + 2]
     if len(args) != 1 or not args[0].isdigit():
         raise SystemExit(
-            "usage: prepare.py <pr-number> [--again] [--tier note|light|standard|large] [--repo owner/name]"
+            "usage: prepare.py <pr-number> [--again] [--tier note|light|standard|large]"
+            " [--focus <text>] [--repo owner/name]"
         )
     pr = int(args[0])
     previous = _previous_run(RUNS / f"pr{pr}")
@@ -210,6 +218,7 @@ def main() -> None:
         "earlier_findings": None if earlier is None else len(earlier),
         "discussion_count": len(discussion),
         "threads": threads,
+        "focus": focus,
     }
     meta["tier"], meta["tier_reason"] = choose_tier(files, load_config(), forced_tier)
     tier_personas = TIER_PERSONAS.get(meta["tier"])
@@ -223,11 +232,14 @@ def main() -> None:
     (run_dir / "pr.md").write_text(_pr_text(data))
     (run_dir / "pr-context.md").write_text(_context_text(meta, files, commits))
     shutil.copy(SKILL_DIR / "reference" / "brief.md", run_dir / "brief.md")
+    if focus:
+        (run_dir / "focus.md").write_text(_focus_text(focus))
 
     substantive = sum(f["substantive_lines"] for f in files)
     print(f"files: {len(files)} · substantive lines: {substantive} · commits: {len(commits)}")
     print(f"tier: {meta['tier']} ({meta['tier_reason']})")
     print(f"personas: {', '.join(meta['personas']) or 'none'}")
+    print(f"focus: {'yes, in focus.md' if focus else 'none'}")
     print(run_dir)
 
 
@@ -571,6 +583,15 @@ def _pr_text(data: dict) -> str:
     )
 
 
+def _focus_text(focus: str) -> str:
+    return f"""# What the user asked the reviewers to focus on
+
+The user typed this when they asked for the brief. See "The user's focus" in `brief.md`.
+
+{focus}
+"""
+
+
 def _context_text(meta: dict, files: list[dict], commits: list[dict]) -> str:
     def file_line(f: dict) -> str:
         notes = [f["status"]]
@@ -625,6 +646,7 @@ def _context_text(meta: dict, files: list[dict], commits: list[dict]) -> str:
 - **Since last brief:** {since_text}
 - **CI:** {json.dumps(meta["checks"].get("counts", "unavailable"))}
 - **Discussion so far:** {meta["discussion_count"]} comment(s) by others, in `discussion.json`
+- **The user's focus:** {"in `focus.md`: read it before you start" if meta["focus"] else "none given"}
 
 ## Asana tasks linked from the PR and commits
 

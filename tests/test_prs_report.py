@@ -153,3 +153,24 @@ def test_rich_only_links_resolved_references() -> None:
     text = str(rich("a.py:3 and b.py:4", {"a.py:3": "https://x/y"}))
     assert '<a href="https://x/y">a.py:3</a>' in text
     assert "b.py:4" in text and "<a" not in text.split("and")[1]
+
+
+def test_report_shows_the_focus_and_its_answers(pr_home, prs_client) -> None:
+    report = make_report()
+    report["focus"] = {
+        "text": "Is the <migration> safe?",
+        "answers": [{"agent": "correctness", "text": "It locks `ledger`.", "links": {}}],
+    }
+    report["findings"][0]["focus"] = True
+    store.write_json(store.RUNS / "pr5" / RUN / "report.json", report)
+    page = prs_client.get(f"/prs/5/{RUN}").get_data(as_text=True)
+    assert "Your focus" in page
+    assert "Is the &lt;migration&gt; safe?" in page
+    assert "It locks <code>ledger</code>." in page
+    assert "your focus</span>" in page
+
+
+def test_report_without_focus_has_no_focus_section(pr_home, prs_client) -> None:
+    store.write_json(store.RUNS / "pr5" / RUN / "report.json", make_report())
+    page = prs_client.get(f"/prs/5/{RUN}").get_data(as_text=True)
+    assert "Your focus" not in page

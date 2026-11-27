@@ -45,3 +45,12 @@ th.sortable[data-dir="asc"]::after { content: " ▲"; color: inherit; }
 
 /* .controls sets display: flex, which would otherwise beat the hidden attribute. */
 #add-form[hidden] { display: none; }
+
+/* The Brief dialog, and the focus it asked for as the brief shows it. */
+#brief-dialog { width: min(560px, calc(100vw - 32px)); border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--text); padding: 16px; }
+#brief-dialog::backdrop { background: rgb(0 0 0 / .35); }
+#brief-dialog h2 { margin-top: 0; }
+#brief-dialog label { display: block; margin: 8px 0 4px; }
+#brief-focus { box-sizing: border-box; width: 100%; font: inherit; font-size: 14px; padding: 6px 8px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg); color: var(--text); resize: vertical; }
+.dialog-buttons { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+blockquote.focus-ask { white-space: pre-wrap; margin: 8px 0; padding: 4px 12px; border-left: 3px solid var(--accent); }
