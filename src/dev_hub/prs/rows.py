@@ -50,6 +50,7 @@ class Row:
     latest_run: str | None = None
     older_runs: list[str] = field(default_factory=list)
     error: str | None = None
+    focus: str = ""
     brief_removed: bool = False
 
     @property
@@ -133,6 +134,7 @@ def _row(
         older_runs=[run.name for run in reversed(runs[:-1])],
         error=request.get("error") if request and request["status"] == "failed" else None,
         brief_removed=not runs and past is not None,
+        focus=(request or {}).get("focus") or meta.get("focus") or "",
     )
 
 

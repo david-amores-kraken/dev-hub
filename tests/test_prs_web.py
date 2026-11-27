@@ -169,3 +169,33 @@ def test_ready_briefs_come_first(prs_client: FlaskClient) -> None:
     page = prs_client.get("/prs/rows").get_data(as_text=True)
     order = [page.index(f'data-pr="{n}" data-status') for n in (2, 1, 3)]
     assert order == sorted(order)
+
+
+def test_brief_keeps_the_focus_the_user_typed(
+    prs_client: FlaskClient, monkeypatch: pytest.MonkeyPatch, pr_home: Path
+) -> None:
+    monkeypatch.setattr("dev_hub.prs.views.start_poller", lambda flag: None)
+    save_queue(queue_item(7), queue_item(8))
+    body = {"pr": 7, "tier": "standard", "focus": "  Check the migration.  "}
+    assert post(prs_client, "/api/brief", body).status_code == 202
+    assert json.loads((pr_home / "requests" / "7.json").read_text())["focus"] == (
+        "Check the migration."
+    )
+    assert (
+        post(prs_client, "/api/brief", {"pr": 8, "tier": "light", "focus": " "}).status_code == 202
+    )
+    assert "focus" not in json.loads((pr_home / "requests" / "8.json").read_text())
+
+
+def test_brief_rejects_a_focus_that_isnt_short_text(prs_client: FlaskClient) -> None:
+    save_queue(queue_item(7))
+    for focus in (["a list"], "x" * 2001):
+        body = {"pr": 7, "tier": "light", "focus": focus}
+        assert post(prs_client, "/api/brief", body).status_code == 400
+
+
+def test_index_has_the_brief_dialog(prs_client: FlaskClient) -> None:
+    save_queue(queue_item(7))
+    page = prs_client.get("/prs/").get_data(as_text=True)
+    assert '<dialog id="brief-dialog"' in page
+    assert 'data-focus=""' in page
