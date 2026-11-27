@@ -2,7 +2,7 @@
 name: pr-brief
 description: Prepare the user to review someone else's PR. Six or seven of the local-review personas (UX only when the PR changes something a user sees) review it without posting, and their findings, the PR's goal and a focus/skim/skip call per commit go into an HTML brief under ~/pr-reviews. Never posts, approves or runs the PR's code.
 when_to_use: Use when the user asks for a brief or a review prep of a PR they've been asked to review ("brief PR 311070", "/pr-brief 311070", "help me review 311070", "what should I look at in this PR"), or when the pr-brief poller starts it. Not for the user's own branches (that's local-review). Each run starts six or seven agents.
-argument-hint: "<pr-number> [again]"
+argument-hint: "<pr-number> [again] [what to focus on]"
 arguments:
   - pr
   - again
@@ -44,8 +44,11 @@ Not done by the repo itself, because it changes `~/.claude` and launchd:
 ### 1. Prepare the run
 
 ```bash
-/Users/davidamores/Code/dev-hub/.venv/bin/python -m dev_hub.prs.prepare <pr> [--again] [--tier note|light|standard|large]
+/Users/davidamores/Code/dev-hub/.venv/bin/python -m dev_hub.prs.prepare <pr> [--again] [--tier note|light|standard|large] [--focus "<text>"]
 ```
+
+If the user's message says what to look at more closely ("brief 311070, focus on the
+migration"), pass their words as `--focus`, unchanged.
 
 **If your instructions say the poller already prepared the run, skip this step** and use the run
 folder and personas you were given. Never prepare it twice.
@@ -57,7 +60,8 @@ prints `refusing:`, stop and report why. A draft PR is refused unless the user p
 URL of its brief (`http://127.0.0.1:8765/prs/<pr>`) and say they can ask for `/pr-brief <pr> again`. The `personas:`
 line lists the personas to start. The `tier:` line says how much review the PR gets (see
 **Tiers** below). UX is on it only when the diff changes something an end
-user sees (`pr-context.md` lists the files that matched, and why).
+user sees (`pr-context.md` lists the files that matched, and why). The `focus:` line says whether
+the user gave focus instructions; if so they're in `<run folder>/focus.md`.
 
 ### 2. Start the personas
 
@@ -89,6 +93,20 @@ Give each the same short prompt:
 
 Wait for all of them.
 
+**If there's a `focus.md`**, read it before starting anyone. The personas read it themselves
+(`brief.md` tells them how), so don't add it to their prompts. You only decide whether anyone
+is missing, on the **standard** and **large** tiers:
+
+- If it asks about something a user sees and `ux` isn't on the `personas:` line, start
+  `review-ux` too, with the same prompt.
+- If part of it fits no persona on the list (for example "is the commit history easy to
+  follow?"), also start `brief-general` with key `general`, and add to its prompt: "Your lane
+  is only the user's focus in `focus.md`: the other personas cover the rest. Leave out `goal`,
+  `ticket` and `commits`."
+
+Start these in the same message as the others. `assemble.py` picks up their output. Don't add
+agents for any other reason, and never drop one from the list.
+
 ### 3. Assemble and render
 
 ```bash
@@ -97,6 +115,8 @@ Wait for all of them.
 
 It writes `report.json` in the run folder and prints the brief's URL. The report has four parts:
 
+- **Your focus**, only when the user gave one: their words, each persona's answer, and which
+  findings are about it.
 - **Goal**, from the Domain persona, with the ticket match.
 - **Findings** from every persona, most severe first (blocker, should-fix, question, nit).
   Findings from different personas on the same lines share one card. A finding a reviewer
@@ -117,7 +137,7 @@ Malformed persona output is dropped and listed in the report, not fatal.
 
 ### 4. Report
 
-Tell the user in a few lines: the PR's goal, the finding counts by severity and the commit
+Tell the user in a few lines: the PR's goal, what the personas said about the focus (if any), the finding counts by severity and the commit
 tiers the script printed, on a re-run what's new and what's gone, any problems it listed, and
 the URL it printed. If a persona
 failed, say which.
@@ -136,7 +156,8 @@ failed, say which.
 
 Anything risky (a migration, raw SQL, a transaction, permissions, settings) rules out light,
 whatever the size. A different tier can be forced with `--tier`: the index page's Brief button
-does this with the level the user picks. The page suggests one from the PR's size alone
+does this with the level the user picks, and then asks for optional focus instructions, which
+become `--focus`. The page suggests one from the PR's size alone
 (`suggest_tier` in `tiers.py`) and explains each level under "What each review level does".
 
 ## Cost
@@ -168,7 +189,7 @@ its `AGENTS.md`).
   - `views.py`: the PR section of the dev hub, as a Flask blueprint (served at
     http://127.0.0.1:8765/prs/, from launchd `com.davidamores.dev-hub`). `templates/` and `static/`
     hold the HTML, CSS and JS; `rows.py` builds the one table of PRs; `report.py` holds the filters
-    the brief page uses. The Brief button posts the PR and the tier, which becomes
+    the brief page uses. The Brief button posts the PR, the tier and any focus, which becomes
     `~/pr-reviews/requests/<pr>.json` and starts `poll --requests-only`. The hub does the host and
     origin checks, because a brief costs money; don't serve this blueprint any other way.
 - `src/dev_hub/review_context.py`: helpers shared with local-review.

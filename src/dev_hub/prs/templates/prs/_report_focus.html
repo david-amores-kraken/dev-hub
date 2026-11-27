@@ -1,0 +1,16 @@
+{% set focus = report.get("focus") %}
+{% if focus %}
+<h2>Your focus</h2>
+<blockquote class="focus-ask">{{ focus.text }}</blockquote>
+{% set flagged = report.findings | selectattr("focus") | list | length %}
+{% if focus.answers %}
+<ul>
+  {% for a in focus.answers %}
+  <li><strong>{{ a.agent }}:</strong> {{ a.text | rich(a.get("links")) }}</li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="muted">No reviewer answered it.</p>
+{% endif %}
+{% if flagged %}<p class="meta">{{ flagged }} finding(s) below are about it, marked “your focus”.</p>{% endif %}
+{% endif %}

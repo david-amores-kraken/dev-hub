@@ -36,6 +36,8 @@ from dev_hub.prs.store import (
 from dev_hub.prs.tiers import TIERS
 
 RUN_RE = re.compile(r"^[\w.-]+$")
+# Extra instructions for the reviewers, typed in the Brief dialog. Long enough for a paragraph or two.
+FOCUS_LIMIT = 2000
 STATUS_LABELS = {
     "waiting": "to review",
     "queued": "queued…",
@@ -119,8 +121,11 @@ def report_page(pr: int, run: str) -> str:
 def brief() -> tuple[Response, int]:
     body = request.get_json(silent=True)
     pr, tier = (body or {}).get("pr"), (body or {}).get("tier")
+    focus = (body or {}).get("focus") or ""
     if not isinstance(pr, int) or isinstance(pr, bool) or tier not in TIERS:
         return error(f"need pr (number) and tier ({', '.join(TIERS)})", 400)
+    if not isinstance(focus, str) or len(focus) > FOCUS_LIMIT:
+        return error(f"focus must be text of {FOCUS_LIMIT} characters or fewer", 400)
     item = next((i for i in read_queue()["items"] if i["number"] == pr), None)
     if item is None:
         return error("that PR isn't in the to-review list", 404)
@@ -135,6 +140,8 @@ def brief() -> tuple[Response, int]:
         "status": "queued",
         "requested_at": now(),
     }
+    if focus.strip():
+        queued["focus"] = focus.strip()
     write_request(queued)
     start_poller("--requests-only")
     return jsonify(queued), 202

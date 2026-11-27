@@ -1,8 +1,8 @@
 """Everything pr-brief keeps under ~/pr-reviews, shared by the poller and the web app.
 
 queue.json        PRs waiting for the user's review, written by the poller on every tick.
-requests/N.json   One per click on Brief: the tier chosen and how the run is going
-                  (queued, running, done or failed).
+requests/N.json   One per click on Brief: the tier chosen, any focus the user typed, and how
+                  the run is going (queued, running, done or failed).
 manual.json       PRs the user added by link, kept in the list while they are open.
 marks.json        What the user decided about each PR: reviewed, or won't review.
 history.json      A record of briefs that were made and since removed to save disk space.

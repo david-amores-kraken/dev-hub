@@ -1,5 +1,6 @@
 <tr data-pr="{{ row.number }}" data-status="{{ row.status }}" data-group="{{ row.group }}"
     data-team="{{ 'core' if row.core else 'other' }}" data-i="{{ position }}"
+    data-title="{{ row.title }}" data-focus="{{ row.focus }}"
     data-created="{{ row.created.strftime('%Y-%m-%dT%H:%M:%SZ') if row.created else '' }}"
     data-updated="{{ row.updated.strftime('%Y-%m-%dT%H:%M:%SZ') if row.updated else '' }}">
   <td class="pr">

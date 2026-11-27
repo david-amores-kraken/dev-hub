@@ -18,10 +18,14 @@ from pathlib import Path
 
 from dev_hub.config import hub_url
 from dev_hub.prs.text import REF_RE
+from dev_hub.review.personas import PERSONAS
 from dev_hub.review_context import run
 
 # Used when meta.json predates the "personas" list prepare.py writes.
 AGENTS = ("domain", "correctness", "cross-client", "tests", "conventions", "naming")
+# Every agent a brief can have. The skill may start one that prepare.py didn't list, when the
+# user's focus needs it (UX, or General to cover what no persona does); its output is read too.
+KNOWN_AGENTS = (*PERSONAS, "general")
 SEVERITIES = ("blocker", "should-fix", "question", "nit")
 MATCHES = ("yes", "partly", "no", "no-ticket", "unavailable")
 # A commit with at least this many changed lines outside tests is worth reading in full.
@@ -58,7 +62,9 @@ def assemble(run_dir: Path) -> dict:
     meta = json.loads((run_dir / "meta.json").read_text())
     facts = json.loads((run_dir / "facts.json").read_text())
     discussion = json.loads((run_dir / "discussion.json").read_text())
-    agents_run = tuple(meta.get("personas", AGENTS))
+    listed = tuple(meta.get("personas", AGENTS))
+    added = sorted(p.stem for p in (run_dir / "out").glob("*.json") if p.stem in KNOWN_AGENTS)
+    agents_run = listed + tuple(key for key in added if key not in listed)
     problems: list[str] = []
     outputs: dict[str, dict | None] = {}
     for key in agents_run:
@@ -89,6 +95,7 @@ def assemble(run_dir: Path) -> dict:
     goal = _goal(narrator)
     if goal:
         goal["links"] = places.links(goal["text"], [])
+    focus = _focus(meta, agents_run, outputs, places)
 
     agents = {}
     notes = {}
@@ -108,6 +115,7 @@ def assemble(run_dir: Path) -> dict:
         "assembled": datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ"),
         "cost": json.loads(cost_path.read_text()) if cost_path.is_file() else None,
         "goal": goal,
+        "focus": focus,
         "findings": findings,
         "resolved": resolved,
         "commits": commits,
@@ -337,6 +345,7 @@ def _findings(
                 "locations": places(item.get("locations"), key),
                 "already_raised_by": raised_by,
                 "earlier_id": _text(item.get("earlier_id")),
+                "focus": item.get("focus") is True,
             }
         )
     return findings
@@ -435,6 +444,7 @@ def _merge(raw: list[dict]) -> list[dict]:
                     for f in group
                 ],
                 "status": "new" if any(f["status"] == "new" for f in group) else group[0]["status"],
+                "focus": any(f["focus"] for f in group),
                 "locations": locations,
                 "commits": commits,
                 "already_raised_by": sorted({f["already_raised_by"] for f in group} - {""}),
@@ -522,6 +532,19 @@ def _commits(
             }
         )
     return commits
+
+
+def _focus(meta: dict, agents_run: tuple, outputs: dict, places: _Places) -> dict | None:
+    """What the user asked the reviewers to look at, and each agent's answer. None if nothing."""
+    text = _text(meta.get("focus"))
+    if not text:
+        return None
+    answers = []
+    for key in agents_run:
+        answer = _text((outputs.get(key) or {}).get("focus"))
+        if answer:
+            answers.append({"agent": key, "text": answer, "links": places.links(answer, [])})
+    return {"text": text, "answers": answers}
 
 
 def _goal(domain: dict | None) -> dict | None:

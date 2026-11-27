@@ -23,7 +23,8 @@ async function post(path, body) {
 
 async function refresh() {
   clearTimeout(timer);
-  const picking = live.contains(document.activeElement) && document.activeElement.tagName === "SELECT";
+  const picking = dialog.open
+    || (live.contains(document.activeElement) && document.activeElement.tagName === "SELECT");
   if (!picking) {
     const chosen = {};
     live.querySelectorAll("select[data-pr]").forEach(s => { chosen[s.dataset.pr] = s.value; });
@@ -47,12 +48,53 @@ live.addEventListener("click", async event => {
   if (!button) return;
   const row = button.closest("tr");
   const pr = Number(row.dataset.pr);
-  button.disabled = true;
   if (button.dataset.action === "brief") {
-    await post(base + "api/brief", { pr, tier: row.querySelector("select").value });
-  } else {
-    await post(base + "api/mark", { pr, state: button.dataset.state || null });
+    openBrief(row);
+    return;
   }
+  button.disabled = true;
+  await post(base + "api/mark", { pr, state: button.dataset.state || null });
+  refresh();
+});
+
+// Brief opens a dialog for optional focus instructions. Confirm sends them with the tier;
+// Cancel, Escape or a click outside the box sends nothing. A retry starts with the last focus.
+const dialog = document.getElementById("brief-dialog");
+const briefForm = document.getElementById("brief-form");
+const focusBox = document.getElementById("brief-focus");
+let briefing = null;
+
+function openBrief(row) {
+  const tier = row.querySelector("select").value;
+  briefing = { pr: Number(row.dataset.pr), tier };
+  document.getElementById("brief-pr").textContent = `#${row.dataset.pr}`;
+  document.getElementById("brief-what").textContent = `${row.dataset.title} · ${tier} review`;
+  focusBox.value = row.dataset.focus || "";
+  document.getElementById("brief-error").textContent = "";
+  dialog.showModal();
+  focusBox.focus();
+}
+
+document.getElementById("brief-cancel").addEventListener("click", () => dialog.close());
+dialog.addEventListener("click", event => {
+  if (event.target === dialog) dialog.close();  // the backdrop
+});
+focusBox.addEventListener("keydown", event => {
+  if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) briefForm.requestSubmit();
+});
+briefForm.addEventListener("submit", async event => {
+  event.preventDefault();
+  if (!briefing) return;
+  const confirm = document.getElementById("brief-confirm");
+  confirm.disabled = true;
+  const ok = await post(base + "api/brief", { ...briefing, focus: focusBox.value.trim() });
+  confirm.disabled = false;
+  if (!ok) {
+    document.getElementById("brief-error").textContent = message.textContent;
+    return;
+  }
+  dialog.close();
+  briefing = null;
   refresh();
 });
 

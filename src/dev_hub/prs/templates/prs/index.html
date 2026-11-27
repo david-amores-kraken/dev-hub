@@ -34,6 +34,23 @@
   <button class="plain" id="add-cancel" type="button">Cancel</button>
 </form>
 
+<dialog id="brief-dialog" aria-labelledby="brief-heading">
+  <form id="brief-form" method="dialog">
+    <h2 id="brief-heading">Brief <span id="brief-pr"></span></h2>
+    <p class="meta" id="brief-what"></p>
+    <label for="brief-focus">Anything the reviewers should look at more closely? (optional)</label>
+    <textarea id="brief-focus" rows="6" maxlength="2000"
+      placeholder="For example: check the migration is safe to run on big clients, and whether the new setting is read at import time."></textarea>
+    <p class="meta">Every reviewer gets this. Each one looks at it first where it fits their area,
+      and still does its usual checks. Leave it empty for a normal brief.</p>
+    <p class="err" id="brief-error"></p>
+    <div class="dialog-buttons">
+      <button class="plain" type="button" id="brief-cancel">Cancel</button>
+      <button class="act" type="submit" id="brief-confirm">Confirm</button>
+    </div>
+  </form>
+</dialog>
+
 <div id="live" data-filter="open" data-team="all" data-base="{{ url_for('prs.index') }}">
 {% include "prs/_live.html" %}
 </div>
